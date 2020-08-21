@@ -68,15 +68,15 @@
   "Scopes for indenting in Julia.")
 
 ;;;; Private functions
-(defun tree-sitter-indent--node-is-indent-rest (node scope)
+(defun tree-sitter-indent--node-is-indent-rest (node scopes)
   "TODO: document"
-  (let-alist scope
+  (let-alist scopes
     (member (ts-node-type node)
             .indent-rest)))
 
-(defun tree-sitter-indent--node-is-indent (node scope)
+(defun tree-sitter-indent--node-is-indent (node scopes)
   "TODO: document"
-  (let-alist scope
+  (let-alist scopes
     (member (ts-node-type node)
             .indent-rest)))
 
@@ -160,10 +160,10 @@ is in a middle position."
               (parent-node
                (ts-get-parent current-node))
               (current-node-is-middle-node
-               (and prev-node next-node))
+               (and previous-node next-node))
               (current-node-must-indent ;; TODO use this val
                (tree-sitter-indent--node-is-indent
-                node)))
+                current-node scopes)))
          (if (and current-node-is-middle-node
                   parent-node
                   (tree-sitter-indent--node-is-indent-rest
