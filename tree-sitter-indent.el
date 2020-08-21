@@ -203,7 +203,7 @@ See `tree-sitter-indent-line'."
            (indents-in-path
             (tree-sitter-indent--indents-in-path parentwise-path
                                                  scopes))
-           (outindents-in-paths
+           (outdents-in-path
             (tree-sitter-indent--outdents-in-path parentwise-path
                                                   scopes)))
       (+
