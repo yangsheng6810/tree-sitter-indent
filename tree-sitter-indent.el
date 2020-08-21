@@ -161,13 +161,14 @@ is in a middle position."
                (ts-get-parent current-node))
               (current-node-is-middle-node
                (and previous-node next-node))
-              (current-node-must-indent ;; TODO use this val
+              (current-node-must-indent
                (tree-sitter-indent--node-is-indent
                 current-node scopes)))
-         (if (and current-node-is-middle-node
-                  parent-node
-                  (tree-sitter-indent--node-is-indent-rest
-                   parent-node scopes))
+         (if (or current-node-must-indent
+                 (and current-node-is-middle-node
+                      parent-node
+                      (tree-sitter-indent--node-is-indent-rest
+                       parent-node scopes)))
              1
            0))))))
 
