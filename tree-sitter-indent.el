@@ -53,7 +53,7 @@
   '((indent . ;; these nodes are always indented
             (class_body
              argument_list ;; arguments of a function call
-             compound_expression ;; begin … end (TODO: is this always multi-line? does it matter?)
+             compound_expression ;; begin … end (TODO: is begin and end also indented?)
              ))
     (indent-rest . ;; if parent node is one of this and current node is in middle → indent
                  (;; member esp, assignment exp
