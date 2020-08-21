@@ -1,3 +1,5 @@
+*WARNING* THIS IS WIP AND NOT USABLE YET
+
 # tree-sitter-indent.el
 
 Use Tree-sitter as backend to source code indentation.
