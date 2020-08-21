@@ -106,7 +106,7 @@ TODO: test this"
       ;; or we moved out of line
       (while (and
 	      current-node
-	      (when-let* ((parent-node (ts-get-parent node))
+	      (when-let* ((parent-node (ts-get-parent current-node))
                           (_same-position
                            (and
                             (eq (ts-node-start-byte parent-node)
