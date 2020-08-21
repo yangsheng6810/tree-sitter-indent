@@ -194,13 +194,17 @@ See `tree-sitter-indent-line'."
   (save-excursion
     ;; go to first non-whitespace character
     (back-to-indentation)
-    (let* ((indenting-node (tree-sitter-indent--highest-node-at-position
+    (let* ((scopes
+            (tree-sitter-indent--get-buffer-scopes))
+           (indenting-node (tree-sitter-indent--highest-node-at-position
                             position))
            (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
            (indents-in-path
-            (tree-sitter-indent--indents-in-path parentwise-path))
+            (tree-sitter-indent--indents-in-path parentwise-path
+                                                 scopes))
            (outindents-in-paths
-            (tree-sitter-indent--outdents-in-path parentwise-path)))
+            (tree-sitter-indent--outdents-in-path parentwise-path
+                                                  scopes)))
       (+
        (cl-reduce '+ indents-in-path-per-parent)
        (cl-reduce '+ outdents-in-path-per-parent)))))
