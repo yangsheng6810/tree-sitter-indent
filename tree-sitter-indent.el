@@ -178,7 +178,7 @@ Each node is tested if it belongs into the \"outdent\" group in SCOPES."
   (thread-last parentwise-path
     (seq-map
      (lambda (node)
-       (if (let-alist .scopes
+       (if (let-alist scopes
              (member (ts-node-type node)
                      .outdent))
            -1
@@ -207,8 +207,8 @@ See `tree-sitter-indent-line'."
             (tree-sitter-indent--outdents-in-path parentwise-path
                                                   scopes)))
       (+
-       (cl-reduce '+ indents-in-path-per-parent)
-       (cl-reduce '+ outdents-in-path-per-parent)))))
+       (cl-reduce '+ indents-in-path)
+       (cl-reduce '+ outdents-in-path)))))
 
 ;;;; Public API
 
