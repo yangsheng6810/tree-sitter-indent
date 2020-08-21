@@ -41,6 +41,7 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'seq)
 (require 'tree-sitter)
 
 (defgroup tree-sitter-indent nil "Indent lines using Tree-sitter as backend"
@@ -150,7 +151,7 @@ What is checked to add an indent:
 - Deterimen what group the node's parent belongs to, and whether the node
 is in a middle position."
   (thread-last parentwise-path
-    (cl-map
+    (seq-map
      (lambda (current-node)
        (let* ((previous-node
                (ts-get-prev-sibling current-node))
@@ -175,7 +176,7 @@ is in a middle position."
 
 Each node is tested if it belongs into the \"outdent\" group in SCOPES."
   (thread-last parentwise-path
-    (cl-map
+    (seq-map
      (lambda (node)
        (if (let-alist .scopes
              (member (ts-node-type node)
