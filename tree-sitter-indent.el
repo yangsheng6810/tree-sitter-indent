@@ -78,7 +78,7 @@
   "TODO: document"
   (let-alist scopes
     (member (ts-node-type node)
-            .indent-rest)))
+            .indent)))
 
 (defun tree-sitter-indent--node-is-indent-rest-or-block (node scope)
   "TODO: document"
