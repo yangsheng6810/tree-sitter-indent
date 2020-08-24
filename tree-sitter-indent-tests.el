@@ -24,6 +24,8 @@
 
 ;;; Code:
 (require 'buttercup)
+(require 'julia-mode)
+(tree-sitter-require 'julia)
 
 ;;;; Julia
 ;;; These were taken from https://github.com/JuliaEditorSupport/julia-emacs/blob/master/julia-mode-tests.el
@@ -71,6 +73,84 @@ else
 end")
      )
     )
+  (it "toplevel"
+    (expect
+     "
+foo()
+bar()"
+     :to-equal
+     (tree-sitter-indent-tests--indent-julia
+      "
+foo()
+bar()")
+     )
+    )
+  (it "nested if"
+    (expect
+     "
+if foo
+    if bar
+bar
+    end
+end"
+     :to-equal
+     (tree-sitter-indent-tests--indent-julia
+      "
+if foo
+    if bar
+        bar
+    end
+end")
+     )
+    )
+  (it "module keyword should not indent"
+    (expect
+     "
+module
+begin
+    a = 1
+end
+end"
+
+     :to-equal
+     (tree-sitter-indent-tests--indent-julia
+      "
+module
+begin
+    a = 1
+end
+end")
+     )
+    )
+  (it "module keyword should not outdent"
+    (expect
+     "
+begin
+module
+foo
+end
+end"
+     :to-equal
+     (tree-sitter-indent-tests--indent-julia
+      "
+begin
+    module
+    foo
+    end
+end")))
+
+  (it "function bodies indent"
+    (expect
+     "
+function foo()
+bar
+end"
+     :to-equal
+     (tree-sitter-indent-tests--indent-julia
+      "
+function foo()
+    bar
+end")))
   )
 ;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
