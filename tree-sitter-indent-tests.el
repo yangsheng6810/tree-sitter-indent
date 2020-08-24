@@ -49,11 +49,16 @@
          (text-no-indent (tree-sitter-indent-tests--unindent original-text))
          (tree-sitter-indented-text
           (with-temp-buffer
+            ;; setup artificial buffer
             (insert text-no-indent)
             (funcall tree-sitter-indent-tests--current-major-mode)
+
+            ;; setup indent using tree-sitter
+            (tree-sitter-mode)
             (setq-local indent-line-function #'tree-sitter-indent-line)
             (indent-region-line-by-line (point-min) (point-max))
 
+            ;; get buffer string
             (buffer-substring-no-properties (point-min) (point-max)))))
     (if (s-equals? original-text
                    tree-sitter-indented-text)
