@@ -26,12 +26,16 @@
 ;; Use Tree-sitter as backend to source code indentation.
 ;;
 ;; Provide an `indent-line-function` using the emacs-tree-sitter package
-;; Usage:
+;; Usage (for julia language):
 ;;
 ;; (require 'tree-sitter-indent)
-;; (add-hook
-;; TODO: fill here with proper hook
-;; (setq-local indent-line-function #'tree-sitter-indent-line))
+;; (tree-sitter-require 'julia)
+;;
+;; (add-hook 'julia-mode-hook
+;;           (lambda ()
+;;             (tree-sitter-mode)
+;; TODO is it necessary to set indent-region-function too?
+;;             (setq-local indent-line-function #'tree-sitter-indent-line))
 ;;
 ;; The code in this package was based on Atom implementation of line indenting using
 ;; Tree-sitter at https://github.com/atom/atom/pull/18321/
