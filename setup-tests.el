@@ -11,6 +11,8 @@
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'buttercup)
+(straight-use-package 'dash)
+(straight-use-package 's)
 ;;https://ubolonton.github.io/emacs-tree-sitter/installation/#installing-with-straight-dot-el
 (straight-use-package
  '(tree-sitter :host github
