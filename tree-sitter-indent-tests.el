@@ -50,12 +50,10 @@
          (tree-sitter-indented-text
           (with-temp-buffer
             (insert text-no-indent)
-            (message "⎡%s⎦"text-no-indent)
-            (setq-local indent-line-function #'tree-sitter-indent-line)
             (funcall tree-sitter-indent-tests--current-major-mode)
+            (setq-local indent-line-function #'tree-sitter-indent-line)
             (indent-region-line-by-line (point-min) (point-max))
-            (message "⎡%s⎦"
-                     (buffer-substring-no-properties (point-min) (point-max)))
+
             (buffer-substring-no-properties (point-min) (point-max)))))
     (if (s-equals? original-text
                    tree-sitter-indented-text)
