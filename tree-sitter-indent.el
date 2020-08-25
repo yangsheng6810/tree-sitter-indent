@@ -57,7 +57,7 @@
   '((indent . ;; these nodes are always indented
             (class_body
              argument_list ;; arguments of a function call
-             compound_expression ;; begin … end (TODO: is begin and end also indented?)
+             compound_expression ;; begin … end
              ))
     (indent-rest . ;; if parent node is one of this and current node is in middle → indent
                  (;; member esp, assignment exp
@@ -66,9 +66,9 @@
                   if_statement
                   while_statement))
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
-             (else_clause
-              )))
-  "Scopes for indenting in Julia.")
+             (else_clause)))
+  "Scopes for indenting in Julia."
+  :type 'sexp)
 
 ;;;; Private functions
 (defun tree-sitter-indent--node-is-indent-rest (node scopes)
@@ -110,13 +110,12 @@ TODO: test this"
       ;; or we moved out of line
       (while (and
 	      current-node
-	      (when-let* ((parent-node (ts-get-parent current-node))
-                          (_same-position
-                           (and
-                            (eq (ts-node-start-byte parent-node)
-                                (ts-node-start-byte current-node)))))
-		;; move upwards to the parent node
-		(setq current-node parent-node))))
+	      (when-let* ((parent-node (ts-get-parent current-node)))
+                (when (and ;; parent and current share same position
+                       (eq (ts-node-start-byte parent-node)
+                           (ts-node-start-byte current-node)))
+		  ;; move upwards to the parent node
+		  (setq current-node parent-node)))))
       current-node)))
 
 (defun tree-sitter-indent--parentwise-path (node)
@@ -141,7 +140,7 @@ The last element in returned path is NODE."
 E.g. julia-mode → tree-sitter-indent-julia-scopes."
   (thread-last major-mode
     (symbol-name)
-    (s-replace-regexp (rx "-mode") "")
+    (replace-regexp-in-string (rx "-mode") "")
     (format "tree-sitter-indent-%s-scopes")
     (intern)
     (symbol-value)))
@@ -223,7 +222,7 @@ Use in buffer with
   (let ((current-buffer-indent-offset
          (thread-last major-mode
            (symbol-name)
-           (s-replace-regexp (rx "-mode") "")
+           (replace-regexp-in-string (rx "-mode") "")
            (format "%s-indent-offset")
            (intern)
            (symbol-value))))

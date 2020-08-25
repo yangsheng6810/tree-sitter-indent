@@ -28,6 +28,7 @@
 (require 'dash)
 (require 's)
 (tree-sitter-require 'julia)
+(require 'tree-sitter-indent)
 
 ;;;; helpers
 ;; http://www.modernemacs.com/post/testing-emacs/

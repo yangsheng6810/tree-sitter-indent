@@ -3,6 +3,9 @@
 EMACS ?= emacs
 BEMACS = $(EMACS) -Q -batch
 
+ELISP_SOURCES=$(wildcard *.el)
+ELISP_BYTECOMPILED=$(patsubst %.el,%.elc,$(ELISP_SOURCES))
+
 all: bytec test
 
 test:
@@ -11,8 +14,15 @@ test:
 	       -l tree-sitter-indent.el \
 	       -l tree-sitter-indent-tests.el \
 	       -f buttercup-run
-bytec:
-	LC_ALL=C $(BEMACS) --eval '(byte-recompile-directory "./")'
 
+bytec: $(ELISP_BYTECOMPILED)
+
+
+%.elc: %.el
+	LC_ALL=C $(BEMACS) \
+	       -l setup-tests.el \
+		-L . \
+		--eval '(setq byte-compile-error-on-warn t)' \
+		-f batch-byte-compile $<
 
 .PHONY:	all test
