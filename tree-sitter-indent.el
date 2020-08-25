@@ -66,7 +66,7 @@
                   if_statement
                   while_statement))
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
-             (else
+             (else_clause
               )))
   "Scopes for indenting in Julia.")
 
@@ -175,18 +175,15 @@ is in a middle position."
              1
            0))))))
 
-(defun tree-sitter-indent--outdents-in-path (parentwise-path scopes)
-  "Subtract 1 or 0 as indent in each node in (PARENTWISE-PATH.
+(defun tree-sitter-indent--node-is-outdent (node scopes)
+  "Subtract 1 or 0 if NODE outdents per SCOPES.
 
-Each node is tested if it belongs into the \"outdent\" group in SCOPES."
-  (thread-last parentwise-path
-    (seq-map
-     (lambda (node)
-       (if (let-alist scopes
-             (member (ts-node-type node)
-                     .outdent))
-           -1
-         0)))))
+NODE is tested if it belongs into the \"outdent\" group in SCOPES."
+  (if (let-alist scopes
+        (member (ts-node-type node)
+                .outdent))
+      -1
+    0))
 
 (cl-defun tree-sitter-indent--indent-count (&optional
                                             (position (point)))
@@ -207,12 +204,12 @@ See `tree-sitter-indent-line'."
            (indents-in-path
             (tree-sitter-indent--indents-in-path parentwise-path
                                                  scopes))
-           (outdents-in-path
-            (tree-sitter-indent--outdents-in-path parentwise-path
-                                                  scopes)))
+           (outdent-per-node
+            (tree-sitter-indent--node-is-outdent indenting-node
+                                                 scopes)))
       (+
        (cl-reduce '+ indents-in-path)
-       (cl-reduce '+ outdents-in-path)))))
+       outdent-per-node))))
 
 ;;;; Public API
 
