@@ -57,12 +57,12 @@
   '((indent . ;; these nodes are always indented
             (class_body
              argument_list ;; arguments of a function call
-             compound_expression ;; begin … end
              ))
     (indent-rest . ;; if parent node is one of this and current node is in middle → indent
                  (;; member esp, assignment exp
                   ;; TODO … =  bleh
                   ;; TODO … = (bleh)
+                  compound_expression ;; begin … end
                   if_statement
                   while_statement))
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
