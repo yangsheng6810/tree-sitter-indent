@@ -144,6 +144,14 @@ end"
 foobar(bar,
        baz)"
             :is-tree-sitter-indented))
+  ;; TODO julia--test-indent-paren-space
+  ;; TODO julia--test-indent-paren-newline
+  (it "indent equals"
+    (expect
+     "
+foo() =
+    bar"
+     :is-tree-sitter-indented))
   )
 ;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
