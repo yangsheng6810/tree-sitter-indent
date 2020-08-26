@@ -55,11 +55,10 @@
 (defcustom tree-sitter-indent-julia-scopes
   ;; TODO cleanup this after thoroughly tested
   '((indent . ;; these nodes are always indented
-            (class_body))
+            (class_body
+             assignment_expression))
     (indent-rest . ;; if parent node is one of this and current node is in middle → indent
-                 (;; member esp, assignment exp
-                  ;; TODO … =  bleh
-                  ;; TODO … = (bleh)
+                 (
                   compound_expression ;; begin … end
                   function_definition
                   if_statement
