@@ -131,7 +131,20 @@ end"
 function foo()
     bar
 end"
-     :is-tree-sitter-indented)))
+     :is-tree-sitter-indented))
+  (it "begin keyword"
+    (expect
+     "
+@async begin
+    bar
+end"
+     :is-tree-sitter-indented))
+  (it "paren"
+    (expect "
+foobar(bar,
+       baz)"
+            :is-tree-sitter-indented))
+  )
 ;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
 (provide 'tree-sitter-indent-tests)
