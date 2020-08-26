@@ -146,6 +146,7 @@ E.g. julia-mode → tree-sitter-indent-julia-scopes."
     (format "tree-sitter-indent-%s-scopes")
     (intern)
     (symbol-value)))
+
 (defun tree-sitter-indent--node-is-paren-indent (node scopes)
   (let-alist scopes
     (member (ts-node-type node)
@@ -158,6 +159,7 @@ Each element of the returned list is one of the following
 
 no-indent                nothing to add to current column
 indent                   add one indent to current column
+outdent                  subtract one indent to current column
 \(paren-indent . COLUMN)  match parent's parent opener column
 
 What is checked to add an indent:
@@ -166,49 +168,62 @@ What is checked to add an indent:
 is in a middle position.
 - A node belongs to the \"outdent\" group in SCOPES
 - A node belongs to the \"paren-indent\" group in SCOPES"
-  (thread-last parentwise-path
-    (seq-map
-     (lambda (current-node)
-       (let* ((previous-node
-               (ts-get-prev-sibling current-node))
-              (next-node
-               (ts-get-next-sibling current-node))
-              (parent-node
-               (ts-get-parent current-node))
-              (current-node-is-middle-node
-               (and previous-node next-node))
-              (current-node-must-indent
-               (tree-sitter-indent--node-is-indent
-                current-node scopes)))
-         (cond
-          ((or current-node-must-indent
-               (and current-node-is-middle-node
-                    parent-node
-                    (tree-sitter-indent--node-is-indent-rest
-                     parent-node scopes)))
-           'indent)
-          ((tree-sitter-indent--node-is-outdent current-node
-                                                scopes) ;; outdent
-           'outdent)
-          ((tree-sitter-indent--node-is-paren-indent parent-node
-                                                     scopes)
-           (let* ((paren-opener
-                   (ts-node-start-byte parent-node))
-                  (paren-point
-                   (save-excursion
-                     (goto-char paren-opener)
-                     (point)))
-                  (beginning-of-line-point
-                   (save-excursion
-                     (goto-char paren-opener)
-                     (beginning-of-line 1)
-                     (point)))
-                  (paren-indenting-column
-                   (+ 1
-                      (- paren-point beginning-of-line-point)))))
-           `(paren ,paren-indenting-column))
-          (t
-           'no-indent)))))))
+  (let ((last-node
+         (seq-elt
+          parentwise-path
+          (-
+           (length parentwise-path)
+           1))))
+    (thread-last parentwise-path
+      (seq-map
+       (lambda (current-node)
+         (let* ((previous-node
+                 (ts-get-prev-sibling current-node))
+                (next-node
+                 (ts-get-next-sibling current-node))
+                (parent-node
+                 (ts-get-parent current-node))
+                (current-node-is-middle-node
+                 (and previous-node next-node))
+                (current-node-must-indent
+                 (tree-sitter-indent--node-is-indent
+                  current-node scopes))
+                (current-node-must-outdent
+                 (and
+                  (eq last-node current-node)
+                  (tree-sitter-indent--node-is-outdent current-node
+                                                       scopes))))
+           (cond
+            ((and parent-node
+                  (tree-sitter-indent--node-is-paren-indent parent-node
+                                                            scopes))
+             (let* ((paren-opener
+                     (ts-node-start-byte parent-node))
+                    (paren-point
+                     (save-excursion
+                       (goto-char paren-opener)
+                       (point)))
+                    (beginning-of-line-point
+                     (save-excursion
+                       (goto-char paren-opener)
+                       (beginning-of-line 1)
+                       (point)))
+                    (paren-indenting-column
+                     (+ 1
+                        (- paren-point beginning-of-line-point))))
+               `(paren-indent ,paren-indenting-column)))
+            ((or current-node-must-indent
+                 (and current-node-is-middle-node
+                      parent-node
+                      (tree-sitter-indent--node-is-indent-rest
+                       parent-node scopes)))
+             (if current-node-must-outdent
+                 'no-indent ;; if it's an outdent, cancel
+               'indent))
+            (current-node-must-outdent
+             'outdent)
+            (t
+             'no-indent))))))))
 
 (defun tree-sitter-indent--node-is-outdent (node scopes)
   "Return non-nil if NODE outdents per SCOPES.
@@ -218,14 +233,21 @@ NODE is tested if it belongs into the \"outdent\" group in SCOPES."
     (member (ts-node-type node)
             .outdent)))
 
-(defun tree-sitter-indent--updated-column (indent-offset indent column)
+(defun tree-sitter-indent--updated-column (indent-offset column indent)
   "Return COLUMN after added indent instructions per INDENT.
 
 INDENT is one of `tree-sitter-indent--indents-in-path'.
 
 If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT."
-  (error "WIP")
   (pcase indent
+    (`no-indent
+     column)
+    (`indent
+     (+ column indent-offset))
+    (`outdent
+     (- column indent-offset))
+    (`(paren-indent ,paren-column)
+     paren-column)
     (_
      (error "Unexpected indent instruction: %s" indent))))
 
@@ -253,7 +275,8 @@ See `tree-sitter-indent-line'."
                    'tree-sitter-indent--updated-column
                    current-buffer-indent-offset)
                   indents-in-path
-                  0))))
+                  0 ;; start at column 0
+                  ))))
 
 ;;;; Public API
 
