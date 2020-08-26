@@ -63,6 +63,7 @@
                   ;; TODO … =  bleh
                   ;; TODO … = (bleh)
                   compound_expression ;; begin … end
+                  function_definition
                   if_statement
                   while_statement))
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
