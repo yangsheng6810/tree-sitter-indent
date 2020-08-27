@@ -54,41 +54,54 @@
 ;;;; scopes per language
 (defcustom tree-sitter-indent-julia-scopes
   ;; TODO cleanup this after thoroughly tested
-  '((indent . ;; these nodes are always indented
-            (class_body
-             assignment_expression))
-    (indent-rest . ;; if parent node is one of this and current node is in middle → indent
+  '((indent-all . ;; these nodes are always indented
+                (class_body
+                 binary-expression))
+    (indent-rest . ;; if parent node is one of this and node is not first → indent
+                 (assignment_expression))
+    (indent-body . ;; if parent node is one of this and current node is in middle → indent
                  (
                   compound_expression ;; begin … end
-                  function_definition
+                  function_definition ;; function … end
                   if_statement
                   while_statement))
+
     (paren-indent . ;; if parent node is one of these → indent to paren opener
                   (argument_list ;; arguments of a function call
                    ))
+    (multi-line-text . ;; if node is one of this, then don't modify the indent
+                     ;; this is basically a peaceful way out by saying "this looks like something
+                     ;; that cannot be indented using AST, so best I leave it as-is"
+                     (triple_string))
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
              (else_clause)))
   "Scopes for indenting in Julia."
   :type 'sexp)
 
 ;;;; Private functions
+(defun tree-sitter-indent--node-is-indent-all (node scopes)
+  "TODO: document"
+  (let-alist scopes
+    (member (ts-node-type node)
+            .indent-all)))
+
 (defun tree-sitter-indent--node-is-indent-rest (node scopes)
   "TODO: document"
   (let-alist scopes
     (member (ts-node-type node)
             .indent-rest)))
 
-(defun tree-sitter-indent--node-is-indent (node scopes)
+(defun tree-sitter-indent--node-is-indent-body (node scopes)
   "TODO: document"
   (let-alist scopes
     (member (ts-node-type node)
-            .indent)))
+            .indent-body)))
 
-(defun tree-sitter-indent--node-is-indent-rest-or-block (node scope)
+(defun tree-sitter-indent--node-is-multi-line-text (node scope)
   "TODO: document"
   (let-alist scope
     (member (ts-node-type node)
-            .indent-rest-or-block)))
+            .multi-line-text)))
 
 (defun tree-sitter-indent--bounded-position (position)
   "Return POSITION, with the guarantee that it will be within buffer range.
@@ -151,15 +164,16 @@ E.g. julia-mode → tree-sitter-indent-julia-scopes."
     (member (ts-node-type node)
             .paren-indent)))
 
-(cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes)
+(cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
   "Map PARENTWISE-PATH into indent instructions.
 
 Each element of the returned list is one of the following
 
-no-indent                nothing to add to current column
-indent                   add one indent to current column
-outdent                  subtract one indent to current column
-\(paren-indent . COLUMN)  match parent's parent opener column
+no-indent                         nothing to add to current column
+indent                            add one indent to current column
+outdent                           subtract one indent to current column
+\(paren-indent . COLUMN)  match   parent's parent opener column
+\(preserve . ORIGINAL-COLUMN)     preserve the column that was before
 
 What is checked to add an indent:
 - A node bolongs into the \"indent\" group in SCOPES
@@ -182,10 +196,12 @@ is in a middle position.
                  (ts-get-next-sibling current-node))
                 (parent-node
                  (ts-get-parent current-node))
+                (current-node-is-rest
+                 previous-node)
                 (current-node-is-middle-node
-                 (and previous-node next-node))
+                 (and current-node-is-rest next-node))
                 (current-node-must-indent
-                 (tree-sitter-indent--node-is-indent
+                 (tree-sitter-indent--node-is-indent-all
                   current-node scopes))
                 (current-node-must-outdent
                  (and
@@ -212,15 +228,22 @@ is in a middle position.
                         (- paren-point beginning-of-line-point))))
                `(paren-indent ,paren-indenting-column)))
             ((or current-node-must-indent
-                 (and current-node-is-middle-node
-                      parent-node
+                 (and parent-node
+                      current-node-is-rest
                       (tree-sitter-indent--node-is-indent-rest
+                       parent-node scopes))
+                 (and parent-node
+                      current-node-is-middle-node
+                      (tree-sitter-indent--node-is-indent-body
                        parent-node scopes)))
              (if current-node-must-outdent
                  'no-indent ;; if it's an outdent, cancel
                'indent))
             (current-node-must-outdent
              'outdent)
+            ((tree-sitter-indent--node-is-multi-line-text current-node
+                                                          scopes)
+             `(preserve . ,original-column))
             (t
              'no-indent))))))))
 
@@ -247,12 +270,14 @@ If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT.
      (- column indent-offset))
     (`(paren-indent ,paren-column)
      paren-column)
+    (`(preserve . ,original-column)
+     original-column)
     (_
      (error "Unexpected indent instruction: %s" indent))))
 
 (cl-defun tree-sitter-indent--indent-column (current-buffer-indent-offset
-                                             &optional
-                                             (position (point)))
+                                             original-column
+                                             position)
   "Return the column the first non-whitespace char at POSITION should indent to.
 
 Collect indent instruction per AST with `tree-sitter-indent--indents-in-path', then
@@ -269,7 +294,8 @@ See `tree-sitter-indent-line'."
            (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
            (indents-in-path
             (tree-sitter-indent--indents-in-path parentwise-path
-                                                 scopes)))
+                                                 scopes
+                                                 original-column)))
       (seq-reduce (apply-partially
                    'tree-sitter-indent--updated-column
                    current-buffer-indent-offset)
@@ -292,10 +318,19 @@ Use in buffer with
            (replace-regexp-in-string (rx "-mode") "")
            (format "%s-indent-offset")
            (intern)
-           (symbol-value))))
+           (symbol-value)))
+        (original-column
+         (-
+          (save-excursion
+            (beginning-of-line 1)
+            (point))
+          (save-excursion
+            (back-to-indentation)
+            (point)))))
     (indent-line-to
-     (tree-sitter-indent--indent-column
-      current-buffer-indent-offset))))
+     (tree-sitter-indent--indent-column current-buffer-indent-offset
+                                        original-column
+                                        (point)))))
 
 (provide 'tree-sitter-indent)
 ;;; tree-sitter-indent.el ends here

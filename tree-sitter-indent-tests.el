@@ -146,12 +146,66 @@ foobar(bar,
             :is-tree-sitter-indented))
   ;; TODO julia--test-indent-paren-space
   ;; TODO julia--test-indent-paren-newline
-  (it "indent equals"
+  (it "equals"
     (expect
      "
 foo() =
     bar"
      :is-tree-sitter-indented))
+
+  (it "operator"
+    ;; TODO ↓ does not parse
+    ;;    (expect
+    ;;     "
+    ;;foo() |>
+    ;;    bar |>
+    ;;    baz
+    ;;qux"
+    ;;     :is-tree-sitter-indented)
+    ;;
+    (expect
+     "x \\
+    y \\
+    z"
+     :is-tree-sitter-indented))
+  (it "ignores blank lines"
+    (expect
+     "
+if foo
+
+    bar
+end"
+     :is-tree-sitter-indented))
+  (it "comment equal"
+    (expect
+     "
+# a =
+# b =
+c" :is-tree-sitter-indented ))
+  (it "leading paren"
+    (expect
+     "
+\(1)"
+     :is-tree-sitter-indented))
+  ;; TODO julia--test-top-level-following-paren-indent
+  (it "multi-line strings"
+    ;; this is actually a translation of julia--test-indentation-of-multi-line-strings
+    ;; since we cannot read within a string comment
+    "a = \"\"\"
+    description
+begin
+    foo
+bar
+end
+\"\"\"" :is-tree-sitter-indented)
+  ;; TODO julia--test-indent-of-end-in-brackets has double begin (indented the same)
+  (it "after commented keyword"
+    (expect
+     "# if foo
+a = 1"
+     :is-tree-sitter-indented)
+    )
+
   )
 ;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
