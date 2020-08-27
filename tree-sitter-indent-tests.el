@@ -205,7 +205,82 @@ end
 a = 1"
      :is-tree-sitter-indented)
     )
+  (it "after commented end"
+    (expect
+     "if foo
+    a = 1
+    #end
+    b = 1
+end"
+     :is-tree-sitter-indented))
+  (it "import, export, using"
+    (expect
+     "export bar, baz,
+    quux"
+     :is-tree-sitter-indented)
+    (expect
+     "using Foo: bar ,
+    baz,
+    quux
+notpartofit"
+     :is-tree-sitter-indented)
 
+    )
+  (it "anonymous function"
+    (expect
+     "function f(x)
+    function(y)
+        x+y
+    end
+end"
+     :is-tree-sitter-indented))
+  (it "backlash indent"
+    (expect
+     "(\\)
+1
+(:\\)
+1"
+     :is-tree-sitter-indented))
+  (it "keyword paren"
+    (expect
+     "if( a>0 )
+end
+
+function( i=1:2 )
+    for( j=1:2 )
+        for( k=1:2 )
+        end
+    end
+end"
+     :is-tree-sitter-indented))
+  (it "ignore :end as block ending"
+    (expect
+     "if a == :end
+    r = 1
+end"
+     :is-tree-sitter-indented)
+    (expect
+     "if a == a[end-4:end]
+    r = 1
+end"
+     :is-tree-sitter-indented))
+  (it "indent hanging"
+    (expect
+     "
+f(x) =
+    x*
+    x"
+     :is-tree-sitter-indented)
+    (expect
+     "
+a = \"#\" |>
+identity"
+     :is-tree-sitter-indented)
+    (expect
+     "
+a = \"#\" # |>
+identity"
+     :is-tree-sitter-indented))
   )
 ;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
