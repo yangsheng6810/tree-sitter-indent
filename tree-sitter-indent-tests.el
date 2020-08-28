@@ -352,7 +352,6 @@ f(
      ))
 
   )
-;; TODO https://github.com/JuliaEditorSupport/julia-emacs/issues/11
 
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here
