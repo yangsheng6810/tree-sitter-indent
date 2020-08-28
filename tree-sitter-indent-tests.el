@@ -208,7 +208,8 @@ end"
      :is-tree-sitter-indented))
   (it "import, export, using"
     (expect
-     "export bar, baz,
+     "
+export bar, baz,
     quux"
      :is-tree-sitter-indented)
     (expect

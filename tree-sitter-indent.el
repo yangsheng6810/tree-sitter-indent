@@ -56,12 +56,14 @@
   ;; TODO cleanup this after thoroughly tested
   '((indent-all . ;; these nodes are always indented
                 (class_body
-                 binary-expression))
+                 binary_expression))
     (indent-rest . ;; if parent node is one of this and node is not first → indent
-                 (assignment_expression))
+                 (assignment_expression
+                  export_statement
+                  import_statement))
     (indent-body . ;; if parent node is one of this and current node is in middle → indent
-                 (
-                  compound_expression ;; begin … end
+                 (compound_expression ;; begin … end
+                  do_clause
                   function_definition ;; function … end
                   if_statement
                   while_statement))
