@@ -64,7 +64,7 @@
     (if (s-equals? original-text
                    tree-sitter-indented-text)
         t
-      `(nil . ,(format "Expected indented text to be \n%s\nbut it was indented to \n%s\n"
+      `(nil . ,(format "\n🔴 Expected indented text to be \n%s\nbut it was indented to \n%s\n"
                        original-text
                        tree-sitter-indented-text)))))
 ;;;; Julia
