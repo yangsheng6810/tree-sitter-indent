@@ -156,11 +156,7 @@ foo() =
     ;;qux"
     ;;     :is-tree-sitter-indented)
     ;;
-    (expect
-     "x \\
-    y \\
-    z"
-     :is-tree-sitter-indented))
+    )
   (it "ignores blank lines"
     (expect
      "
