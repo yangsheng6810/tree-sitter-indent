@@ -34,7 +34,6 @@
 ;; (add-hook 'julia-mode-hook
 ;;           (lambda ()
 ;;             (tree-sitter-mode)
-;; TODO is it necessary to set indent-region-function too?
 ;;             (setq-local indent-line-function #'tree-sitter-indent-line))
 ;;
 ;; The code in this package was based on Atom implementation of line indenting using
@@ -53,7 +52,6 @@
 
 ;;;; scopes per language
 (defcustom tree-sitter-indent-julia-scopes
-  ;; TODO cleanup this after thoroughly tested
   '((indent-all . ;; these nodes are always indented
                 (class_body
                  binary_expression))

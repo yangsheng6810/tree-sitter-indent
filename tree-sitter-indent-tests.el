@@ -147,7 +147,6 @@ foo() =
 
   (it "operator"
     (display-warning 'buttercup "See https://github.com/tree-sitter/tree-sitter-julia/issues/9")
-    ;; TODO ↓ does not parse
     ;;    (expect
     ;;     "
     ;;foo() |>
