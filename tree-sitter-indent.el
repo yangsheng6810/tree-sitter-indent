@@ -105,13 +105,6 @@
     (member (ts-node-type node)
             .multi-line-text)))
 
-(defun tree-sitter-indent--bounded-position (position)
-  "Return POSITION, with the guarantee that it will be within buffer range.
-
-TODO: find out why tree-sitter reports out-of-bound-bytes."
-  (max (point-min)
-       (min (point-max) position)))
-
 (defun tree-sitter-indent--highest-node-at-position (position)
   "Get the node at buffer POSITION that's at the highest level.
 
