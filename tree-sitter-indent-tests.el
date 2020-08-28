@@ -345,7 +345,20 @@ f(
 "
      :is-tree-sitter-indented
      ))
-
+  (it "multi-line λ"
+    ;; https://github.com/JuliaEditorSupport/julia-emacs/issues/73
+    (expect
+     "
+lines=[]
+Channel(c->begin
+            for l in lines
+                for w in split(l)
+                    put!(c, w)
+                end
+                @show l
+            end
+        end)"
+     :is-tree-sitter-indented))
   )
 
 (provide 'tree-sitter-indent-tests)

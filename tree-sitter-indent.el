@@ -62,6 +62,7 @@
     (indent-body . ;; if parent node is one of this and current node is in middle → indent
                  (compound_expression ;; begin … end
                   do_clause
+                  for_statement
                   function_definition ;; function … end
                   if_statement
                   while_statement))
