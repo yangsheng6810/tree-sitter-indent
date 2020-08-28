@@ -134,8 +134,10 @@ end"
 foobar(bar,
        baz)"
             :is-tree-sitter-indented))
-  ;; TODO julia--test-indent-paren-space
-  ;; TODO julia--test-indent-paren-newline
+  (it "paren space"
+    (display-warning 'buttercup  "space-within-a-parentheses treatment in Julia is not implemented"))
+  (it "paren newlin"
+    (display-warning 'buttercup "newline-within-a-parentheses treatment in Julia is not implemented"))
   (it "equals"
     (expect
      "
