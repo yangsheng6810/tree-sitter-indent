@@ -358,7 +358,28 @@ Channel(c->begin
                 @show l
             end
         end)"
-     :is-tree-sitter-indented))
+     :is-tree-sitter-indented)
+    (expect
+     "
+Channel(
+        c->begin
+              if true
+                  push!(c, \"true\")
+              end
+        end)
+"
+     :is-tree-sitter-indented)
+    (expect
+     "
+Channel(c->begin
+              if true
+                  push!(c, \"true\")
+              end
+        end)
+"
+     :is-tree-sitter-indented)
+
+    )
   )
 
 (provide 'tree-sitter-indent-tests)
