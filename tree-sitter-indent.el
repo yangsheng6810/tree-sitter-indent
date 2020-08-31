@@ -306,25 +306,48 @@ See `tree-sitter-indent-line'."
 Use in buffer with
 
 (setq-local indent-line-function #'tree-sitter-indent-line)."
-  (let ((current-buffer-indent-offset
-         (thread-last major-mode
-           (symbol-name)
-           (replace-regexp-in-string (rx "-mode") "")
-           (format "%s-indent-offset")
-           (intern)
-           (symbol-value)))
-        (original-column
-         (-
-          (save-excursion
-            (beginning-of-line 1)
-            (point))
-          (save-excursion
-            (back-to-indentation)
-            (point)))))
-    (indent-line-to
-     (tree-sitter-indent--indent-column current-buffer-indent-offset
-                                        original-column
-                                        (point)))))
+  (let* ((current-buffer-indent-offset
+          (thread-last major-mode
+            (symbol-name)
+            (replace-regexp-in-string (rx "-mode") "")
+            (format "%s-indent-offset")
+            (intern)
+            (symbol-value)))
+         (original-column
+          (-
+           (save-excursion
+             (beginning-of-line 1)
+             (point))
+           (save-excursion
+             (back-to-indentation)
+             (point))))
+         (new-column
+          (tree-sitter-indent--indent-column current-buffer-indent-offset
+                                             original-column
+                                             (point))))
+    (when (numberp new-column)
+      (indent-line-to new-column))
+    new-column))
+
+(defun tree-sitter-debug-indent-line ()
+  "Call `tree-sitter-indent-line' while printing useful info."
+  (let* ((line-str (thing-at-point 'line))
+         (position (point))
+         (indenting-node (tree-sitter-indent--highest-node-at-position
+                          position))
+         (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
+         (readable-parentwise-path
+          (seq-map 'ts-node-type parentwise-path))
+         (tree-sitter-tree-before (ts-tree-to-sexp tree-sitter-tree))
+         (column
+          (tree-sitter-indent-line)))
+    (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %d) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
+             line-str
+             (thing-at-point 'line)
+             column
+             readable-parentwise-path
+             (ts-node-type indenting-node)
+             tree-sitter-tree-before)))
 
 (provide 'tree-sitter-indent)
 ;;; tree-sitter-indent.el ends here
