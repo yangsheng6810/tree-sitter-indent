@@ -25,6 +25,7 @@
 ;;; Code:
 (require 'buttercup)
 (require 'julia-mode)
+(require 'rust-mode)
 (require 'dash)
 (require 's)
 (tree-sitter-require 'julia)
@@ -381,6 +382,24 @@ Channel(c->begin
 
     )
   )
+
+;;;; rust
+(tree-sitter-require 'rust)
+(describe "Rust"
+  (before-all
+    (setq rust-indent-offset 4
+          tree-sitter-indent-tests--current-major-mode 'rust-mode))
+  (it "issue 126"
+    ;; https://github.com/rust-lang/rust-mode/issues/126
+    (expect
+     "
+fn main() {
+    for x in foo.iter()
+                .map(|x| x * 2) {
+        let y = 22; // I expect this to be aligned with the `for`!
+    }
+}
+" :is-tree-sitter-indented)))
 
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here

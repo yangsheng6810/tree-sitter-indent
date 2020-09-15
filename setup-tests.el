@@ -25,3 +25,4 @@
 (require 'tree-sitter-langs)
 ;; lang-specific packages
 (straight-use-package 'julia-mode)
+(straight-use-package 'rust-mode)

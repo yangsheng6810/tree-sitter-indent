@@ -79,6 +79,26 @@
   "Scopes for indenting in Julia."
   :type 'sexp)
 
+(defcustom tree-sitter-indent-rust-scopes
+  '((indent-all . ;; these nodes are always indented
+                ())
+    (indent-rest . ;; if parent node is one of this and node is not first → indent
+                 (function_item
+                  for_expression))
+    (indent-body . ;; if parent node is one of this and current node is in middle → indent
+                 ())
+
+    (paren-indent . ;; if parent node is one of these → indent to paren opener
+                  ())
+    (multi-line-text . ;; if node is one of this, then don't modify the indent
+                     ;; this is basically a peaceful way out by saying "this looks like something
+                     ;; that cannot be indented using AST, so best I leave it as-is"
+                     ())
+    (outdent . ;; these nodes always outdent (1 shift in opposite direction)
+             ()))
+  "Scopes for indenting in Julia."
+  :type 'sexp)
+
 ;;;; Private functions
 (defun tree-sitter-indent--node-is-indent-all (node scopes)
   "TODO: document"
@@ -166,7 +186,7 @@ Each element of the returned list is one of the following
 no-indent                         nothing to add to current column
 indent                            add one indent to current column
 outdent                           subtract one indent to current column
-\(paren-indent . COLUMN)  match   parent's parent opener column
+\(column-indent . COLUMN)         match parent's parent opener column
 \(preserve . ORIGINAL-COLUMN)     preserve the column that was before
 
 What is checked to add an indent:
@@ -174,7 +194,7 @@ What is checked to add an indent:
 - Deterimen what group the node's parent belongs to, and whether the node
 is in a middle position.
 - A node belongs to the \"outdent\" group in SCOPES
-- A node belongs to the \"paren-indent\" group in SCOPES"
+- A node belongs to the \"column-indent\" group in SCOPES"
   (let ((last-node
          (seq-elt
           parentwise-path
@@ -220,7 +240,7 @@ is in a middle position.
                     (paren-indenting-column
                      (+ 1
                         (- paren-point beginning-of-line-point))))
-               `(paren-indent ,paren-indenting-column)))
+               `(column-indent ,paren-indenting-column)))
             ((or current-node-must-indent
                  (and parent-node
                       current-node-is-rest
@@ -262,7 +282,7 @@ If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT.
      (+ column indent-offset))
     (`outdent
      (- column indent-offset))
-    (`(paren-indent ,paren-column)
+    (`(column-indent ,paren-column)
      paren-column)
     (`(preserve . ,original-column)
      original-column)
