@@ -98,7 +98,7 @@
                      ;; that cannot be indented using AST, so best I leave it as-is"
                      ())
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
-             ()))
+             ("}")))
   "Scopes for indenting in Julia."
   :type 'sexp)
 
