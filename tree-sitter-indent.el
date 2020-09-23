@@ -91,7 +91,7 @@
     (paren-indent . ;; if parent node is one of these → indent to paren opener
                   ())
     (align-char-to . ;; chaining char → node types we move parentwise to find the first chaining char
-                   (?. . (call_expression field_expression)))
+                   ((?. . (call_expression field_expression))))
 
     (multi-line-text . ;; if node is one of this, then don't modify the indent
                      ;; this is basically a peaceful way out by saying "this looks like something
@@ -184,6 +184,8 @@ E.g. julia-mode → tree-sitter-indent-julia-scopes."
 (defun tree-sitter-indent--chain-column (current-node align-char-to-alist parentwise-path)
   "TODO: document this
 
+Returns a column to indent to or nil if does not apply
+
 Reads text from current buffer."
   (let ((first-character-for-current-node
          (string-to-char
@@ -193,25 +195,27 @@ Reads text from current buffer."
                             align-char-to-alist))
                 (last-parent-belonging-to
                  (thread-last parentwise-path
+                   (reverse) ;; path starts at (ts-parent current-node)
+                   (cdr) ;; skip current-node
                    ;; walk within allowed boundaries
                    (seq-take-while
                     (lambda (node)
                       (member (ts-node-type node)
                               last-parent-belongs-to)))
-                   ;; take last
-                   (reverse)
                    (seq-first)))
                 (first-char-position-within-last-parent-node
-                 ;; sipmle search, could be updated later
+                 ;; naive search, could be updated later
                  ;; this may detect wrong column-char with something like ⎡a(should().ignore().this)\n.b()\n.c()⎦
                  (save-excursion
                    (goto-char
                     (ts-node-start-byte last-parent-belonging-to))
                    (search-forward-regexp
                     (regexp-quote
-                     first-character-for-current-node)
+                     (char-to-string
+                      first-character-for-current-node))
                     (ts-node-end-byte current-node)
-                    t)))
+                    t)
+                   (- (point) 1)))
                 (end-of-parent-line-pos
                  (save-excursion
                    (goto-char
@@ -227,12 +231,12 @@ Reads text from current buffer."
                            (goto-char
                             first-char-position-within-last-parent-node)
                            (back-to-indentation)
-                           (pos)))))
+                           (point)))))
         ;; indent to column, which is (char-pos - line-begin-pos)
-        `(column-indent ,(save-excursion
-                           (goto-char first-char-position-within-last-parent-node)
-                           (- first-char-position-within-last-parent-node
-                              (line-beginning-position))))))))
+        (save-excursion
+          (goto-char first-char-position-within-last-parent-node)
+          (- first-char-position-within-last-parent-node
+             (line-beginning-position)))))))
 
 (cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
   "Map PARENTWISE-PATH into indent instructions.
@@ -285,6 +289,8 @@ is in a middle position.
                     .align-char-to)
                   parentwise-path)))
            (cond
+            ((numberp chain-column)
+             `(column-indent ,chain-column))
             ((and parent-node
                   (tree-sitter-indent--node-is-paren-indent parent-node
                                                             scopes))
@@ -303,8 +309,7 @@ is in a middle position.
                      (+ 1
                         (- paren-point beginning-of-line-point))))
                `(column-indent ,paren-indenting-column)))
-            ((numberp chain-column)
-             `(column-indent ,chain-column))
+
             ((or current-node-must-indent
                  (and parent-node
                       current-node-is-rest
