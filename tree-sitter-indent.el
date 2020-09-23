@@ -104,35 +104,51 @@
 
 ;;;; Private functions
 (defun tree-sitter-indent--node-is-indent-all (node scopes)
-  "TODO: document"
+  "Non-nil if NODE type is in indent-all group.
+
+Nodes in this group will be always +1 indentend.
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
     (member (ts-node-type node)
             .indent-all)))
 
 (defun tree-sitter-indent--node-is-indent-rest (node scopes)
-  "TODO: document"
+  "Non-nil if NODE type is in indent-rest group.
+
+Nodes in this group will +1 indentend if they are a non-first child of
+parent node.
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
     (member (ts-node-type node)
             .indent-rest)))
 
 (defun tree-sitter-indent--node-is-indent-body (node scopes)
-  "TODO: document"
+  "Non-nil if NODE type is in indent-body group.
+
+Nodes in this group will +1 indentend if they are both a non-first child of
+and non-last child of parent node.
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
     (member (ts-node-type node)
             .indent-body)))
 
-(defun tree-sitter-indent--node-is-multi-line-text (node scope)
-  "TODO: document"
-  (let-alist scope
+(defun tree-sitter-indent--node-is-multi-line-text (node scopes)
+  "Non-nil if NODE type is in indent-rest group.
+
+Nodes in this group will keep their current indentation
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
+  (let-alist scopes
     (member (ts-node-type node)
             .multi-line-text)))
 
 (defun tree-sitter-indent--highest-node-at-position (position)
   "Get the node at buffer POSITION that's at the highest level.
 
-POSITION is a byte position in buffer like \\(point-min\\).
-
-TODO: test this"
+POSITION is a byte position in buffer like \\(point-min\\)."
   (save-excursion
     (goto-char position)
     ;; maybe implement this as a cl-loop
@@ -177,14 +193,25 @@ E.g. julia-mode → tree-sitter-indent-julia-scopes."
     (symbol-value)))
 
 (defun tree-sitter-indent--node-is-paren-indent (node scopes)
+  "Non-nil if NODE type is in paren-indent group.
+
+Child nodes in this group will be indentend to the paren opener column.
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
     (member (ts-node-type node)
             .paren-indent)))
 
 (defun tree-sitter-indent--chain-column (current-node align-char-to-alist parentwise-path)
-  "TODO: document this
+  "When node is in a chain call, return column to align each call.
 
-Returns a column to indent to or nil if does not apply
+CURRENT-NODE current node being indented
+ALIGN-CHAR-TO-ALIST char → group of node types we can move within when searching
+for the first chain char.
+This group is supposed to contain all node types conformed by a chain.
+PARENTWISE-PATH nodes from CURRENT-NODE to tree root (\"document\")
+
+Returns a column to indent to or nil if no such column can / should be applied.
 
 Reads text from current buffer."
   (let ((first-character-for-current-node
@@ -366,7 +393,8 @@ If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT.
 Collect indent instruction per AST with `tree-sitter-indent--indents-in-path', then
 apply instructions with `tree-sitter-indent--updated-column' using CURRENT-BUFFER-INDENT-OFFSET as step.
 
-See `tree-sitter-indent-line'."
+See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
+`tree-sitter-indent--indents-in-path'"
   (save-excursion
     ;; go to first non-whitespace character
     (back-to-indentation)
@@ -392,9 +420,9 @@ See `tree-sitter-indent-line'."
 (defun tree-sitter-indent-line ()
   "Use Tree-sitter as backend to indent current line.
 
-Use in buffer with
+Use in buffer like so:
 
-(setq-local indent-line-function #'tree-sitter-indent-line)."
+\(setq-local indent-line-function #'tree-sitter-indent-line)."
   (let* ((current-buffer-indent-offset
           (thread-last major-mode
             (symbol-name)
