@@ -28,7 +28,6 @@
 (require 'rust-mode)
 (require 'dash)
 (require 's)
-(tree-sitter-require 'julia)
 (require 'tree-sitter-indent)
 
 ;;;; helpers
@@ -49,6 +48,7 @@
 (buttercup-define-matcher :is-tree-sitter-indented (code-text)
   (let* ((original-text (s-trim (funcall code-text)))
          (text-no-indent (tree-sitter-indent-tests--unindent original-text))
+         (indent-tabs-mode nil)
          (tree-sitter-indented-text
           (with-temp-buffer
             ;; setup artificial buffer
@@ -69,6 +69,7 @@
                        original-text
                        tree-sitter-indented-text)))))
 ;;;; Julia
+(tree-sitter-require 'julia)
 ;;; These were taken from https://github.com/JuliaEditorSupport/julia-emacs/blob/master/julia-mode-tests.el
 
 
