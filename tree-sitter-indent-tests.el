@@ -400,7 +400,19 @@ fn main() {
         let y = 22; // I expect this to be aligned with the `for`!
     }
 }
-" :is-tree-sitter-indented)))
+" :is-tree-sitter-indented))
+  (it "issue 299"
+    ;; https://github.com/rust-lang/rust-mode/issues/299
+    (expect
+     "
+impl <A, D> MyTrait<A, D> for YourType
+    where A: TraitB + TraitC,
+          D: TraitE + TraitF {}
+
+#[test]
+//
+"
+     :is-tree-sitter-indented)))
 
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here
