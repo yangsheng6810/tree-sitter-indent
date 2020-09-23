@@ -1,7 +1,3 @@
-THIS PACKAGE IS CURRENTLY IN α
-You can try it to use it (all tests pass), but it has not been thoroughly tested by end users
-So it's currently targeted to developers
-
 # tree-sitter-indent.el
 
 Use Tree-sitter as backend to source code indentation.
@@ -41,7 +37,7 @@ Then, install `tree-sitter-indent`. Recommended way is using `straight.el` (no (
 
 ## Usage
 
-So far, only julia language can be indented. Add the following to your `init.el`
+So far, only rust language can be indented. Add the following to your `init.el`
 
 ```elisp
 ;; install tree-sitter
@@ -50,10 +46,10 @@ So far, only julia language can be indented. Add the following to your `init.el`
 ;; install tree-sitter-indent
 ;; …
 
-(tree-sitter-require 'julia)
+(tree-sitter-require 'rust)
 (require 'tree-sitter-indent)
 
-(add-hook 'julia-mode-hook
+(add-hook 'rust-mode-hook
           (lambda ()
             (tree-sitter-mode)
             (setq-local indent-line-function #'tree-sitter-indent-line))
@@ -61,7 +57,11 @@ So far, only julia language can be indented. Add the following to your `init.el`
 
 ## Adding languages or fixing current
 
-TODO
+Currently, julia is work-in-progress as the Tree-sitter implementation is not done. Rust was actually the second language being worked on, which involved a more mature development, so you may want to check those commits.
+
+The best way to work through a language is to add the targets you want to get ("I want this code to be indented like this") as a unit test. And then add code as needed.
+
+PRs are welcome.
 
 ### Running tests
 
@@ -73,4 +73,6 @@ This will byte-compile elisp files and run tests. Byte-compiler warnings will be
 
 Internally, `make` will fetch all dependencies using `straight.el` and run.
 
-TODO: expand
+### Code of conduct
+
+Pending (PRs welcome)
