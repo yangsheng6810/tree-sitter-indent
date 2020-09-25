@@ -86,10 +86,10 @@
                  (function_item
                   for_expression))
     (indent-body . ;; if parent node is one of this and current node is in middle → indent
-                 ())
+                 (let_declaration))
 
     (paren-indent . ;; if parent node is one of these → indent to paren opener
-                  ())
+                  (parameters))
     (align-char-to . ;; chaining char → node types we move parentwise to find the first chaining char
                    ((?. . (call_expression field_expression))))
     (aligned-siblings . ;; siblings (nodes with same parent) should be aligned to the first child
