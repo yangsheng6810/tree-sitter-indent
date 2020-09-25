@@ -411,7 +411,23 @@ impl <A, D> MyTrait<A, D> for YourType
 #[test]
 //
 "
-     :is-tree-sitter-indented)))
+     :is-tree-sitter-indented))
+  (it "issue 152"
+    ;; https://github.com/rust-lang/rust-mode/issues/152
+    (expect
+     "
+pub fn build_lane_table_states<'grammar>
+    (grammar: &'grammar Grammar,
+     start: NonterminalString)
+     -> Result<Vec<LR1State<'grammar>>, LR1TableConstructionError<'grammar>> {
+    let (lr0_states, lr0_conflicts) = match build::build_lr0_states(grammar, start) {
+        Ok(s) => (s, vec![]),
+        Err(e) => (e.states, e.conflicts),
+    };
+
+    unimplemented!()
+}" :is-tree-sitter-indented))
+  )
 
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here
