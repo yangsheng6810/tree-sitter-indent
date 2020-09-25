@@ -92,6 +92,8 @@
                   ())
     (align-char-to . ;; chaining char → node types we move parentwise to find the first chaining char
                    ((?. . (call_expression field_expression))))
+    (aligned-siblings . ;; siblings (nodes with same parent) should be aligned to the first child
+                      (where_predicate))
 
     (multi-line-text . ;; if node is one of this, then don't modify the indent
                      ;; this is basically a peaceful way out by saying "this looks like something
@@ -144,6 +146,16 @@ SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
     (member (ts-node-type node)
             .multi-line-text)))
+
+(defun tree-sitter-indent--node-is-aligned-sibling (node scopes)
+  "Non-nil if NODE type is in aligned-siblings group.
+
+Nodes in this group will be aligned to the column of the first sibling.
+
+SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
+  (let-alist scopes
+    (member (ts-node-type node)
+            .aligned-siblings)))
 
 (defun tree-sitter-indent--highest-node-at-position (position)
   "Get the node at buffer POSITION that's at the highest level.
@@ -265,6 +277,36 @@ Reads text from current buffer."
           (- first-char-position-within-last-parent-node
              (line-beginning-position)))))))
 
+(defun tree-sitter-indent--first-sibling-column (current-node scopes parent-node)
+  "Column position for CURRENT-NODE's first sibling.
+
+If CURRENT-NODE belongs to the aligned-siblings group, will look up the first
+sibling in same group \\(running through PARENT-NODE's children) and return
+its column.
+
+SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings group."
+  (when (and parent-node
+             (tree-sitter-indent--node-is-aligned-sibling
+              current-node scopes))
+    (when-let* ((current-node-type
+                 (ts-node-type current-node))
+                (first-sibling
+                 (cl-loop for ith-sibling = (ts-get-nth-child parent-node 0)
+                          then (ts-get-next-sibling ith-sibling)
+                          while (not (null ith-sibling))
+                          if (equal current-node-type
+                                    (ts-node-type ith-sibling))
+                          return ith-sibling
+                          end))
+                (first-sibling-position
+                 (ts-node-start-byte first-sibling))
+                )
+      (when (not (ts-node-eq current-node first-sibling))
+        (save-excursion
+          (goto-char first-sibling-position)
+          (- first-sibling-position
+             (line-beginning-position)))))))
+
 (cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
   "Map PARENTWISE-PATH into indent instructions.
 
@@ -314,10 +356,17 @@ is in a middle position.
                   current-node
                   (let-alist scopes
                     .align-char-to)
-                  parentwise-path)))
+                  parentwise-path))
+                (sibling-column
+                 (tree-sitter-indent--first-sibling-column
+                  current-node
+                  scopes
+                  parent-node)))
            (cond
             ((numberp chain-column)
              `(column-indent ,chain-column))
+            ((numberp sibling-column)
+             `(column-indent ,sibling-column))
             ((and parent-node
                   (tree-sitter-indent--node-is-paren-indent parent-node
                                                             scopes))
