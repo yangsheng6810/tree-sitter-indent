@@ -81,7 +81,7 @@
 
 (defcustom tree-sitter-indent-rust-scopes
   '((indent-all . ;; these nodes are always indented
-                ())
+                (where_clause))
     (indent-rest . ;; if parent node is one of this and node is not first → indent
                  (function_item
                   for_expression))
