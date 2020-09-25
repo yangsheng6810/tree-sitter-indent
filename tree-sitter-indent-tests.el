@@ -429,6 +429,13 @@ pub fn build_lane_table_states<'grammar>
 
     unimplemented!()
 }" :is-tree-sitter-indented))
+  (it "issue 383"
+    ;; https://github.com/rust-lang/rust-mode/issues/383
+    "
+Ok(foo.bar()
+      .baz())
+"
+    :is-tree-sitter-indented)
   )
 
 (provide 'tree-sitter-indent-tests)
