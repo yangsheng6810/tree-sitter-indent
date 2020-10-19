@@ -307,6 +307,89 @@ SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings grou
           (- first-sibling-position
              (line-beginning-position)))))))
 
+;;; Extensible indentation instructions
+;; Leverage eieio's dispatch to have an extensible framework to sort out an indent
+;; given a certain context (information at a node position)
+
+(defclass tree-sitter-indent--indent-from-context ()
+  ((parentwise-path)
+   (scopes)
+   (original-column))
+  "Get indentation command (an instruction `tree-sitter-indent--updated-column' can understand)
+from current context.
+If you want to add a new indent from a specific context, inherit from this class and define
+a method for `tree-sitter-indent--indent-at-context'. In the inherited class, add
+information from context that you need and in the method make the calculations if
+such indentation order applies.
+
+To change type priority (what type has higher priority) you should change the inheritance
+tree, using this class as root.
+
+Higher priority types are further from this class. The highest priority class accumulates all
+information from each of the types."
+  )
+
+(cl-defgeneric tree-sitter-indent--step (obj)
+  "Move OBJ to the next node."
+  (set-slot-value obj current-node
+                  (ts-get-next-sibling current-node))
+  obj)
+
+(cl-defgeneric tree-sitter-indent--indent-at-context (obj)
+  "Each defmethod will be called on obj until one spits results
+
+TODO: improve above text"
+  )
+
+;;;; no indent
+(defclass tree-sitter-indent--no-indent-from-context (tree-sitter-indent--indent-from-context)
+  ()
+  "No indent from context, nothing to indent")
+
+(cl-defmethod tree-sitter-indent--indent-at-context ((obj tree-sitter-indent--no-indent-from-context))
+  'no-indent)
+
+;;;; multi-line
+(defclass tree-sitter-indent--multi-line (tree-sitter-indent--no-indent-from-context)
+  ()
+  "Current node is multi-line and we should preserve the original column")
+
+(cl-defmethod tree-sitter-indent--indent-at-context ((obj tree-sitter-indent--no-indent-from-context))
+  (with-slots (current-node scopes original-column) obj
+
+    (when (let-alist scopes
+            (member (ts-node-type current-node)
+                    .multi-line-text))
+      `(preserve . ,original-column))))
+
+;;;; outdent-or-indent
+(error "WIP: ↓ define new slots")
+(defclass tree-sitter-indent--outdent-or-indent (tree-sitter-indent--indent-at-context)
+  ()
+  "Current node is multi-line and we should preserve the original column")
+
+(cl-defmethod tree-sitter-indent--indent-at-context ((obj tree-sitter-indent--outdent-or-indent))
+  (with-slots (current-node scopes original-column) obj
+    (when (or current-node-must-indent
+              (and parent-node
+                   current-node-is-rest
+                   (tree-sitter-indent--node-is-indent-rest
+                    parent-node scopes))
+              (and parent-node
+                   current-node-is-middle-node
+                   (tree-sitter-indent--node-is-indent-body
+                    parent-node scopes))))
+    ))
+
+(cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
+  "Meh"
+  (cl-loop indent-from-context = (tree-sitter-indent--indent-from-context)
+           then (tree-sitter-indent--step indent-from-context)
+           while (oref indent-context current-node)
+           collect (tree-sitter-indent--indent-at-context indent-context)))
+
+
+
 (cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
   "Map PARENTWISE-PATH into indent instructions.
 
