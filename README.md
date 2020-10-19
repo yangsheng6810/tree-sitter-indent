@@ -73,6 +73,6 @@ This will byte-compile elisp files and run tests. Byte-compiler warnings will be
 
 Internally, `make` will fetch all dependencies using `straight.el` and run.
 
-### Code of conduct
+### Code of Conduct
 
-Pending (PRs welcome)
+Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms.
