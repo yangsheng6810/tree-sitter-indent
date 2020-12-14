@@ -6,7 +6,7 @@ BEMACS = $(EMACS) -Q -batch
 ELISP_SOURCES=$(wildcard *.el)
 ELISP_BYTECOMPILED=$(patsubst %.el,%.elc,$(ELISP_SOURCES))
 
-all: bytec test lint
+all: bytec lint test
 
 test:
 	LC_ALL=C $(BEMACS) \
@@ -18,10 +18,13 @@ test:
 bytec: $(ELISP_BYTECOMPILED)
 
 lint:
-	LC_ALL=C $(BEMACS) \
-	    -l setup-package-lint.el \
+	LC_ALL=C bash ./emacs-sandbox.sh \
+	    --dir $(shell md5sum /etc/os-release | cut -d \  -f 1) \
+	    --install package-lint \
+	    -- \
+	    -Q --batch \
 	    -f package-lint-batch-and-exit \
-	    tree-sitter-indent.el tree-sitter-indent-tests.el 
+	    tree-sitter-indent.el
 
 %.elc: %.el
 	LC_ALL=C $(BEMACS) \
