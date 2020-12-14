@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Lema <felipelema@mortemale.org>
 ;; Keywords: convenience, internal
-;; Package-Requires: ((emacs "26.1") (tree-sitter "0.10.0"))
+;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1"))
 ;; URL: https://codeberg.org/FelipeLema/tree-sitter-indent.el
 ;; Version: 0.1
 
@@ -112,7 +112,7 @@ Nodes in this group will be always +1 indentend.
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .indent-all)))
 
 (defun tree-sitter-indent--node-is-indent-rest (node scopes)
@@ -123,7 +123,7 @@ parent node.
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .indent-rest)))
 
 (defun tree-sitter-indent--node-is-indent-body (node scopes)
@@ -134,7 +134,7 @@ and non-last child of parent node.
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .indent-body)))
 
 (defun tree-sitter-indent--node-is-multi-line-text (node scopes)
@@ -144,7 +144,7 @@ Nodes in this group will keep their current indentation
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .multi-line-text)))
 
 (defun tree-sitter-indent--node-is-aligned-sibling (node scopes)
@@ -154,7 +154,7 @@ Nodes in this group will be aligned to the column of the first sibling.
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .aligned-siblings)))
 
 (defun tree-sitter-indent--highest-node-at-position (position)
@@ -169,10 +169,10 @@ POSITION is a byte position in buffer like \\(point-min\\)."
       ;; or we moved out of line
       (while (and
 	      current-node
-	      (when-let* ((parent-node (ts-get-parent current-node)))
+	      (when-let* ((parent-node (tsc-get-parent current-node)))
                 (when (and ;; parent and current share same position
-                       (eq (ts-node-start-byte parent-node)
-                           (ts-node-start-byte current-node)))
+                       (eq (tsc-node-start-byte parent-node)
+                           (tsc-node-start-byte current-node)))
 		  ;; move upwards to the parent node
 		  (setq current-node parent-node)))))
       current-node)))
@@ -181,7 +181,7 @@ POSITION is a byte position in buffer like \\(point-min\\)."
   "Get list of nodes by moving parent-wise starting at NODE.
 
 The last element in returned path is NODE."
-  (let ((next-parent-node (ts-get-parent node))
+  (let ((next-parent-node (tsc-get-parent node))
         (path
          (list node)))
     (while next-parent-node
@@ -190,7 +190,7 @@ The last element in returned path is NODE."
             (append (list next-parent-node)
                     path))
       ;; move to next iteration
-      (setq next-parent-node (ts-get-parent next-parent-node)))
+      (setq next-parent-node (tsc-get-parent next-parent-node)))
     path))
 
 (defun tree-sitter-indent--get-buffer-scopes ()
@@ -211,7 +211,7 @@ Child nodes in this group will be indentend to the paren opener column.
 
 SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .paren-indent)))
 
 (defun tree-sitter-indent--chain-column (current-node align-char-to-alist parentwise-path)
@@ -228,7 +228,7 @@ Returns a column to indent to or nil if no such column can / should be applied.
 Reads text from current buffer."
   (let ((first-character-for-current-node
          (string-to-char
-          (ts-node-text current-node))))
+          (tsc-node-text current-node))))
     (when-let* ((last-parent-belongs-to
                  (alist-get first-character-for-current-node
                             align-char-to-alist))
@@ -239,7 +239,7 @@ Reads text from current buffer."
                    ;; walk within allowed boundaries
                    (seq-take-while
                     (lambda (node)
-                      (member (ts-node-type node)
+                      (member (tsc-node-type node)
                               last-parent-belongs-to)))
                    (seq-first)))
                 (first-char-position-within-last-parent-node
@@ -247,18 +247,18 @@ Reads text from current buffer."
                  ;; this may detect wrong column-char with something like ⎡a(should().ignore().this)\n.b()\n.c()⎦
                  (save-excursion
                    (goto-char
-                    (ts-node-start-byte last-parent-belonging-to))
+                    (tsc-node-start-byte last-parent-belonging-to))
                    (search-forward-regexp
                     (regexp-quote
                      (char-to-string
                       first-character-for-current-node))
-                    (ts-node-end-byte current-node)
+                    (tsc-node-end-byte current-node)
                     t)
                    (- (point) 1)))
                 (end-of-parent-line-pos
                  (save-excursion
                    (goto-char
-                    (ts-node-start-byte last-parent-belonging-to))
+                    (tsc-node-start-byte last-parent-belonging-to))
                    (line-end-position))))
       (when (and (numberp first-char-position-within-last-parent-node)
                  ;; char is within parent line
@@ -289,19 +289,19 @@ SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings grou
              (tree-sitter-indent--node-is-aligned-sibling
               current-node scopes))
     (when-let* ((current-node-type
-                 (ts-node-type current-node))
+                 (tsc-node-type current-node))
                 (first-sibling
-                 (cl-loop for ith-sibling = (ts-get-nth-child parent-node 0)
-                          then (ts-get-next-sibling ith-sibling)
+                 (cl-loop for ith-sibling = (tsc-get-nth-child parent-node 0)
+                          then (tsc-get-next-sibling ith-sibling)
                           while (not (null ith-sibling))
                           if (equal current-node-type
-                                    (ts-node-type ith-sibling))
+                                    (tsc-node-type ith-sibling))
                           return ith-sibling
                           end))
                 (first-sibling-position
-                 (ts-node-start-byte first-sibling))
+                 (tsc-node-start-byte first-sibling))
                 )
-      (when (not (ts-node-eq current-node first-sibling))
+      (when (not (tsc-node-eq current-node first-sibling))
         (save-excursion
           (goto-char first-sibling-position)
           (- first-sibling-position
@@ -334,11 +334,11 @@ is in a middle position.
       (seq-map
        (lambda (current-node)
          (let* ((previous-node
-                 (ts-get-prev-sibling current-node))
+                 (tsc-get-prev-sibling current-node))
                 (next-node
-                 (ts-get-next-sibling current-node))
+                 (tsc-get-next-sibling current-node))
                 (parent-node
-                 (ts-get-parent current-node))
+                 (tsc-get-parent current-node))
                 (current-node-is-rest
                  previous-node)
                 (current-node-is-middle-node
@@ -371,7 +371,7 @@ is in a middle position.
                   (tree-sitter-indent--node-is-paren-indent parent-node
                                                             scopes))
              (let* ((paren-opener
-                     (ts-node-start-byte parent-node))
+                     (tsc-node-start-byte parent-node))
                     (paren-point
                      (save-excursion
                        (goto-char paren-opener)
@@ -411,7 +411,7 @@ is in a middle position.
 
 NODE is tested if it belongs into the \"outdent\" group in SCOPES."
   (let-alist scopes
-    (member (ts-node-type node)
+    (member (tsc-node-type node)
             .outdent)))
 
 (defun tree-sitter-indent--updated-column (indent-offset column indent)
@@ -503,8 +503,8 @@ Use in buffer like so:
                           position))
          (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
          (readable-parentwise-path
-          (seq-map 'ts-node-type parentwise-path))
-         (tree-sitter-tree-before (ts-tree-to-sexp tree-sitter-tree))
+          (seq-map 'tsc-node-type parentwise-path))
+         (tree-sitter-tree-before (tsc-tree-to-sexp tree-sitter-tree))
          (column
           (tree-sitter-indent-line)))
     (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %d) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
@@ -512,7 +512,7 @@ Use in buffer like so:
              (thing-at-point 'line)
              column
              readable-parentwise-path
-             (ts-node-type indenting-node)
+             (tsc-node-type indenting-node)
              tree-sitter-tree-before)))
 
 (provide 'tree-sitter-indent)
