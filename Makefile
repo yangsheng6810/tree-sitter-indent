@@ -19,7 +19,7 @@ bytec: $(ELISP_BYTECOMPILED)
 
 lint:
 	LC_ALL=C bash ./emacs-sandbox.sh \
-	    --dir $(shell md5sum /etc/os-release | cut -d \  -f 1) \
+	    --dir .sandbox-$(shell md5sum /etc/os-release | cut -d \  -f 1) \
 	    --install package-lint \
 	    -- \
 	    -Q --batch \
