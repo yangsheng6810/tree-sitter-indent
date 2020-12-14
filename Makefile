@@ -6,7 +6,7 @@ BEMACS = $(EMACS) -Q -batch
 ELISP_SOURCES=$(wildcard *.el)
 ELISP_BYTECOMPILED=$(patsubst %.el,%.elc,$(ELISP_SOURCES))
 
-all: bytec test
+all: bytec test lint
 
 test:
 	LC_ALL=C $(BEMACS) \
@@ -17,6 +17,11 @@ test:
 
 bytec: $(ELISP_BYTECOMPILED)
 
+lint:
+	LC_ALL=C $(BEMACS) \
+	    -l setup-package-lint.el \
+	    -f package-lint-batch-and-exit \
+	    tree-sitter-indent.el tree-sitter-indent-tests.el 
 
 %.elc: %.el
 	LC_ALL=C $(BEMACS) \
