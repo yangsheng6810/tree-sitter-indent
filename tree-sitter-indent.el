@@ -196,7 +196,7 @@ The last element in returned path is NODE."
 (defun tree-sitter-indent--get-buffer-scopes ()
   "Get scopes by reading the name of `major-mode'.
 
-E.g. julia-mode → tree-sitter-indent-julia-scopes."
+E.g. `julia-mode' → tree-sitter-indent-julia-scopes."
   (thread-last major-mode
     (symbol-name)
     (replace-regexp-in-string (rx "-mode") "")
@@ -467,11 +467,10 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
 
 ;;;###autoload
 (defun tree-sitter-indent-line ()
-  "Use Tree-sitter as backend to indent current line.
+  "Use Tree-sitter as backend to indent current line."
+  ;;Use in buffer like so:
 
-Use in buffer like so:
-
-\(setq-local indent-line-function #'tree-sitter-indent-line)."
+  ;; (setq-local indent-line-function #'tree-sitter-indent-line).
   (let* ((current-buffer-indent-offset
           (thread-last major-mode
             (symbol-name)
