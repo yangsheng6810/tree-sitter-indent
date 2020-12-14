@@ -1,10 +1,10 @@
-;;; tree-sitter-indent.el --- Provide `line-indent-function' with a Tree-sitter backend using emacs-tree-sitter package  -*- lexical-binding: t; -*-
+;;; tree-sitter-indent.el --- Provide indentation with a Tree-sitter backend -*- lexical-binding: t; -*-
 
 ;; Copyright © 2020  Felipe Lema
 
 ;; Author: Felipe Lema <felipelema@mortemale.org>
 ;; Keywords: convenience, internal
-;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1"))
+;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1") (seq "2.21"))
 ;; URL: https://codeberg.org/FelipeLema/tree-sitter-indent.el
 ;; Version: 0.1
 
@@ -299,8 +299,7 @@ SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings grou
                           return ith-sibling
                           end))
                 (first-sibling-position
-                 (tsc-node-start-byte first-sibling))
-                )
+                 (tsc-node-start-byte first-sibling)))
       (when (not (tsc-node-eq current-node first-sibling))
         (save-excursion
           (goto-char first-sibling-position)
@@ -494,7 +493,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
       (indent-line-to new-column))
     new-column))
 
-(defun tree-sitter-debug-indent-line ()
+(defun tree-sitter-indent-line-and-debug ()
   "Call `tree-sitter-indent-line' while printing useful info."
   (let* ((line-str (thing-at-point 'line))
          (position (point))
