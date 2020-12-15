@@ -33,4 +33,4 @@ lint:
 		--eval '(setq byte-compile-error-on-warn t)' \
 		-f batch-byte-compile $<
 
-.PHONY:	all test
+.PHONY:	all lint test
