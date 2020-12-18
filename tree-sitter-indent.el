@@ -479,12 +479,8 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
             (symbol-value)))
          (original-column
           (-
-           (save-excursion
-             (beginning-of-line 1)
-             (point))
-           (save-excursion
-             (back-to-indentation)
-             (point))))
+           (line-beginning-position)
+           (point)))
          (new-column
           (tree-sitter-indent--indent-column current-buffer-indent-offset
                                              original-column
