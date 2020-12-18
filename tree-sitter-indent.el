@@ -489,9 +489,10 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
           (tree-sitter-indent--indent-column current-buffer-indent-offset
                                              original-column
                                              (point))))
-    (save-excursion
-      (when (numberp new-column)
-        (indent-line-to new-column)))
+    (when (numberp new-column)
+      (if (<= (current-column) (current-indentation))
+          (ignore-errors (indent-line-to new-column))
+        (save-excursion (ignore-errors (indent-line-to new-column)))))
     new-column))
 
 (defun tree-sitter-indent-line-and-debug ()
