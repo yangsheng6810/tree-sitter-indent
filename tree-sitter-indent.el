@@ -470,7 +470,17 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
   ;;Use in buffer like so:
 
   ;; (setq-local indent-line-function #'tree-sitter-indent-line).
-  (let* ((current-buffer-indent-offset
+  (let* ((original-position
+          (point))
+         (first-non-blank-pos ;; see savep in `smie-indent-line'
+          (save-excursion
+            (forward-line 0)
+            (skip-chars-forward " \t")
+            (point)))
+         (should-save-excursion
+          (save-excursion
+            (< first-non-blank-pos original-position)))
+         (current-buffer-indent-offset
           (thread-last major-mode
             (symbol-name)
             (replace-regexp-in-string (rx "-mode") "")
@@ -486,10 +496,9 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
                                              original-column
                                              (point))))
     (when (numberp new-column)
-      (if (<= (current-column) (current-indentation))
-          (ignore-errors (indent-line-to new-column))
-        (save-excursion (ignore-errors (indent-line-to new-column)))))
-    new-column))
+      (if should-save-excursion
+          (save-excursion (indent-line-to new-column))
+        (indent-line-to new-column)))))
 
 (defun tree-sitter-indent-line-and-debug ()
   "Call `tree-sitter-indent-line' while printing useful info."
