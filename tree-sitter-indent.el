@@ -50,6 +50,11 @@
 (defgroup tree-sitter-indent nil "Indent lines using Tree-sitter as backend"
   :group 'tree-sitter)
 
+(defcustom tree-sitter-indent-offset 4
+  "Indent offset to be used by major modes"
+  :type 'integer
+  :group 'tree-sitter)
+
 ;;;; scopes per language
 (defcustom tree-sitter-indent-julia-scopes
   '((indent-all . ;; these nodes are always indented
@@ -411,19 +416,20 @@ NODE is tested if it belongs into the \"outdent\" group in SCOPES."
     (member (tsc-node-type node)
             .outdent)))
 
-(defun tree-sitter-indent--updated-column (indent-offset column indent)
+(defun tree-sitter-indent--updated-column (column indent)
   "Return COLUMN after added indent instructions per INDENT.
 
 INDENT is one of `tree-sitter-indent--indents-in-path'.
 
-If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT."
+If \"1 indent\" is to be applied, then returned value is
+TREE-SITTER-INDENT-OFFSET + INDENT."
   (pcase indent
     (`no-indent
      column)
     (`indent
-     (+ column indent-offset))
+     (+ column tree-sitter-indent-offset))
     (`outdent
-     (- column indent-offset))
+     (- column tree-sitter-indent-offset))
     (`(column-indent ,paren-column)
      paren-column)
     (`(preserve . ,original-column)
@@ -431,12 +437,13 @@ If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT.
     (_
      (error "Unexpected indent instruction: %s" indent))))
 
-(cl-defun tree-sitter-indent--indent-column (current-buffer-indent-offset
-                                             original-column)
+(cl-defun tree-sitter-indent--indent-column (original-column)
   "Return the column the first non-whitespace char at POSITION should indent to.
 
-Collect indent instruction per AST with `tree-sitter-indent--indents-in-path', then
-apply instructions with `tree-sitter-indent--updated-column' using CURRENT-BUFFER-INDENT-OFFSET as step.
+Collect indent instruction per AST with
+`tree-sitter-indent--indents-in-path', then apply instructions
+with `tree-sitter-indent--updated-column' using
+TREE-SITTER-INDENT-OFFSET as step.
 
 See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
 `tree-sitter-indent--indents-in-path'"
@@ -452,9 +459,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
           (tree-sitter-indent--indents-in-path parentwise-path
                                                scopes
                                                original-column)))
-    (seq-reduce (apply-partially
-                 'tree-sitter-indent--updated-column
-                 current-buffer-indent-offset)
+    (seq-reduce #'tree-sitter-indent--updated-column
                 indents-in-path
                 0 ;; start at column 0
                 )))
@@ -476,19 +481,11 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
             (point)))
          (should-save-excursion
           (< first-non-blank-pos original-position))
-         (current-buffer-indent-offset
-          (thread-last major-mode
-            (symbol-name)
-            (replace-regexp-in-string (rx "-mode") "")
-            (format "%s-indent-offset")
-            (intern)
-            (symbol-value)))
          (original-column
           (- (line-beginning-position)
              original-position))
          (new-column
-          (tree-sitter-indent--indent-column current-buffer-indent-offset
-                                             original-column)))
+          (tree-sitter-indent--indent-column original-column)))
     (when (numberp new-column)
       (if should-save-excursion
           (save-excursion (indent-line-to new-column))
