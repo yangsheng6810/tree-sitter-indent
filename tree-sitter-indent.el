@@ -50,10 +50,8 @@
 (defgroup tree-sitter-indent nil "Indent lines using Tree-sitter as backend"
   :group 'tree-sitter)
 
-(defcustom tree-sitter-indent-offset 4
-  "Indent offset to be used by major modes"
-  :type 'integer
-  :group 'tree-sitter)
+(defvar-local tree-sitter-indent-offset 4
+  "Indent offset to be used by major modes")
 
 ;;;; scopes per language
 (defcustom tree-sitter-indent-julia-scopes
@@ -109,10 +107,8 @@
   "Scopes for indenting in Julia."
   :type 'sexp)
 
-(defcustom tree-sitter-indent-current-scopes nil
-  "Current scopes in use for tree-sitter-indent."
-  :type 'sexp
-  :group 'tree-sitter)
+(defvar-local tree-sitter-indent-current-scopes nil
+  "Current scopes in use for tree-sitter-indent.")
 
 ;;;; Private functions
 (defun tree-sitter-indent--node-is-indent-all (node)
@@ -476,7 +472,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
          (tree-sitter-tree-before (tsc-tree-to-sexp tree-sitter-tree))
          (column
           (tree-sitter-indent-line)))
-    (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %d) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
+    (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %s) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
              line-str
              (thing-at-point 'line)
              column
