@@ -186,9 +186,7 @@ The last element in returned path is NODE."
          (list node)))
     (while next-parent-node
       ;; collect
-      (setq path
-            (append (list next-parent-node)
-                    path))
+      (push next-parent-node path)
       ;; move to next iteration
       (setq next-parent-node (tsc-get-parent next-parent-node)))
     path))
