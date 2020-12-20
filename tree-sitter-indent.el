@@ -50,6 +50,9 @@
 (defgroup tree-sitter-indent nil "Indent lines using Tree-sitter as backend"
   :group 'tree-sitter)
 
+(defvar-local tree-sitter-indent-offset 4
+  "Indent offset to be used by major modes")
+
 ;;;; scopes per language
 (defcustom tree-sitter-indent-julia-scopes
   '((indent-all . ;; these nodes are always indented
@@ -104,56 +107,49 @@
   "Scopes for indenting in Julia."
   :type 'sexp)
 
+(defvar-local tree-sitter-indent-current-scopes nil
+  "Current scopes in use for tree-sitter-indent.")
+
 ;;;; Private functions
-(defun tree-sitter-indent--node-is-indent-all (node scopes)
+(defun tree-sitter-indent--node-is-indent-all (node)
   "Non-nil if NODE type is in indent-all group.
 
-Nodes in this group will be always +1 indentend.
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Nodes in this group will be always +1 indentend."
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .indent-all)))
 
-(defun tree-sitter-indent--node-is-indent-rest (node scopes)
+(defun tree-sitter-indent--node-is-indent-rest (node)
   "Non-nil if NODE type is in indent-rest group.
 
-Nodes in this group will +1 indentend if they are a non-first child of
-parent node.
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Nodes in this group will +1 indentend if they are a non-first
+child of parent node."
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .indent-rest)))
 
-(defun tree-sitter-indent--node-is-indent-body (node scopes)
+(defun tree-sitter-indent--node-is-indent-body (node)
   "Non-nil if NODE type is in indent-body group.
 
-Nodes in this group will +1 indentend if they are both a non-first child of
-and non-last child of parent node.
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Nodes in this group will +1 indentend if they are both a
+non-first child of and non-last child of parent node."
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .indent-body)))
 
-(defun tree-sitter-indent--node-is-multi-line-text (node scopes)
+(defun tree-sitter-indent--node-is-multi-line-text (node)
   "Non-nil if NODE type is in indent-rest group.
 
-Nodes in this group will keep their current indentation
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Nodes in this group will keep their current indentation"
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .multi-line-text)))
 
-(defun tree-sitter-indent--node-is-aligned-sibling (node scopes)
+(defun tree-sitter-indent--node-is-aligned-sibling (node)
   "Non-nil if NODE type is in aligned-siblings group.
 
-Nodes in this group will be aligned to the column of the first sibling.
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Nodes in this group will be aligned to the column of the first sibling."
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .aligned-siblings)))
 
@@ -186,31 +182,17 @@ The last element in returned path is NODE."
          (list node)))
     (while next-parent-node
       ;; collect
-      (setq path
-            (append (list next-parent-node)
-                    path))
+      (push next-parent-node path)
       ;; move to next iteration
       (setq next-parent-node (tsc-get-parent next-parent-node)))
     path))
 
-(defun tree-sitter-indent--get-buffer-scopes ()
-  "Get scopes by reading the name of `major-mode'.
-
-E.g. `julia-mode' → tree-sitter-indent-julia-scopes."
-  (thread-last major-mode
-    (symbol-name)
-    (replace-regexp-in-string (rx "-mode") "")
-    (format "tree-sitter-indent-%s-scopes")
-    (intern)
-    (symbol-value)))
-
-(defun tree-sitter-indent--node-is-paren-indent (node scopes)
+(defun tree-sitter-indent--node-is-paren-indent (node)
   "Non-nil if NODE type is in paren-indent group.
 
-Child nodes in this group will be indentend to the paren opener column.
-
-SCOPES is supposed to come from `tree-sitter-indent--get-buffer-scopes'."
-  (let-alist scopes
+Child nodes in this group will be indentend to the paren opener
+column."
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .paren-indent)))
 
@@ -277,17 +259,17 @@ Reads text from current buffer."
           (- first-char-position-within-last-parent-node
              (line-beginning-position)))))))
 
-(defun tree-sitter-indent--first-sibling-column (current-node scopes parent-node)
+(defun tree-sitter-indent--first-sibling-column (current-node parent-node)
   "Column position for CURRENT-NODE's first sibling.
 
 If CURRENT-NODE belongs to the aligned-siblings group, will look up the first
 sibling in same group \\(running through PARENT-NODE's children) and return
 its column.
 
-SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings group."
+TREE-SITTER-INDENT-CURRENT-SCOPES is used to test whether
+CURRENT-NODE belongs to the aligned-siblings group."
   (when (and parent-node
-             (tree-sitter-indent--node-is-aligned-sibling
-              current-node scopes))
+             (tree-sitter-indent--node-is-aligned-sibling current-node))
     (when-let* ((current-node-type
                  (tsc-node-type current-node))
                 (first-sibling
@@ -306,7 +288,7 @@ SCOPES is used to test whether CURRENT-NODE belongs to the aligned-siblings grou
           (- first-sibling-position
              (line-beginning-position)))))))
 
-(cl-defun tree-sitter-indent--indents-in-path (parentwise-path scopes original-column)
+(cl-defun tree-sitter-indent--indents-in-path (parentwise-path original-column)
   "Map PARENTWISE-PATH into indent instructions.
 
 Each element of the returned list is one of the following
@@ -318,11 +300,11 @@ outdent                           subtract one indent to current column
 \(preserve . ORIGINAL-COLUMN)     preserve the column that was before
 
 What is checked to add an indent:
-- A node bolongs into the \"indent\" group in SCOPES
+- A node bolongs into the \"indent\" group in TREE-SITTER-INDENT-SCOPES
 - Deterimen what group the node's parent belongs to, and whether the node
 is in a middle position.
-- A node belongs to the \"outdent\" group in SCOPES
-- A node belongs to the \"column-indent\" group in SCOPES"
+- A node belongs to the \"outdent\" group in TREE-SITTER-INDENT-SCOPES
+- A node belongs to the \"column-indent\" group in TREE-SITTER-INDENT-SCOPES"
   (let ((last-node
          (seq-elt
           parentwise-path
@@ -343,32 +325,30 @@ is in a middle position.
                 (current-node-is-middle-node
                  (and current-node-is-rest next-node))
                 (current-node-must-indent
-                 (tree-sitter-indent--node-is-indent-all
-                  current-node scopes))
+                 (tree-sitter-indent--node-is-indent-all current-node))
                 (current-node-must-outdent
                  (and
                   (eq last-node current-node)
-                  (tree-sitter-indent--node-is-outdent current-node
-                                                       scopes)))
+                  (tree-sitter-indent--node-is-outdent current-node)))
                 (chain-column
                  (tree-sitter-indent--chain-column
                   current-node
-                  (let-alist scopes
+                  (let-alist tree-sitter-indent-current-scopes
                     .align-char-to)
                   parentwise-path))
                 (sibling-column
                  (tree-sitter-indent--first-sibling-column
                   current-node
-                  scopes
                   parent-node)))
            (cond
             ((numberp chain-column)
              `(column-indent ,chain-column))
             ((numberp sibling-column)
              `(column-indent ,sibling-column))
+            ((tree-sitter-indent--node-is-multi-line-text current-node)
+             `(preserve . ,original-column))
             ((and parent-node
-                  (tree-sitter-indent--node-is-paren-indent parent-node
-                                                            scopes))
+                  (tree-sitter-indent--node-is-paren-indent parent-node))
              (let* ((paren-opener
                      (tsc-node-start-byte parent-node))
                     (paren-point
@@ -388,44 +368,40 @@ is in a middle position.
             ((or current-node-must-indent
                  (and parent-node
                       current-node-is-rest
-                      (tree-sitter-indent--node-is-indent-rest
-                       parent-node scopes))
+                      (tree-sitter-indent--node-is-indent-rest parent-node))
                  (and parent-node
                       current-node-is-middle-node
-                      (tree-sitter-indent--node-is-indent-body
-                       parent-node scopes)))
+                      (tree-sitter-indent--node-is-indent-body parent-node)))
              (if current-node-must-outdent
                  'no-indent ;; if it's an outdent, cancel
                'indent))
             (current-node-must-outdent
              'outdent)
-            ((tree-sitter-indent--node-is-multi-line-text current-node
-                                                          scopes)
-             `(preserve . ,original-column))
             (t
              'no-indent))))))))
 
-(defun tree-sitter-indent--node-is-outdent (node scopes)
+(defun tree-sitter-indent--node-is-outdent (node)
   "Return non-nil if NODE outdents per SCOPES.
 
 NODE is tested if it belongs into the \"outdent\" group in SCOPES."
-  (let-alist scopes
+  (let-alist tree-sitter-indent-current-scopes
     (member (tsc-node-type node)
             .outdent)))
 
-(defun tree-sitter-indent--updated-column (indent-offset column indent)
+(defun tree-sitter-indent--updated-column (column indent)
   "Return COLUMN after added indent instructions per INDENT.
 
 INDENT is one of `tree-sitter-indent--indents-in-path'.
 
-If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT."
+If \"1 indent\" is to be applied, then returned value is
+TREE-SITTER-INDENT-OFFSET + INDENT."
   (pcase indent
     (`no-indent
      column)
     (`indent
-     (+ column indent-offset))
+     (+ column tree-sitter-indent-offset))
     (`outdent
-     (- column indent-offset))
+     (- column tree-sitter-indent-offset))
     (`(column-indent ,paren-column)
      paren-column)
     (`(preserve . ,original-column)
@@ -433,34 +409,29 @@ If \"1 indent\" is to be applied, then returned value is INDENT-OFFSET + INDENT.
     (_
      (error "Unexpected indent instruction: %s" indent))))
 
-(cl-defun tree-sitter-indent--indent-column (current-buffer-indent-offset
-                                             original-column
-                                             position)
+(cl-defun tree-sitter-indent--indent-column (original-column)
   "Return the column the first non-whitespace char at POSITION should indent to.
 
-Collect indent instruction per AST with `tree-sitter-indent--indents-in-path', then
-apply instructions with `tree-sitter-indent--updated-column' using CURRENT-BUFFER-INDENT-OFFSET as step.
+Collect indent instruction per AST with
+`tree-sitter-indent--indents-in-path', then apply instructions
+with `tree-sitter-indent--updated-column' using
+TREE-SITTER-INDENT-OFFSET as step.
 
 See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
 `tree-sitter-indent--indents-in-path'"
-  (save-excursion
-    ;; go to first non-whitespace character
-    (back-to-indentation)
-    (let* ((scopes
-            (tree-sitter-indent--get-buffer-scopes))
-           (indenting-node (tree-sitter-indent--highest-node-at-position
-                            position))
-           (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
-           (indents-in-path
-            (tree-sitter-indent--indents-in-path parentwise-path
-                                                 scopes
-                                                 original-column)))
-      (seq-reduce (apply-partially
-                   'tree-sitter-indent--updated-column
-                   current-buffer-indent-offset)
-                  indents-in-path
-                  0 ;; start at column 0
-                  ))))
+  (let* ((indenting-node
+          (tree-sitter-indent--highest-node-at-position
+           (save-excursion
+             (back-to-indentation)
+             (point))))
+         (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
+         (indents-in-path
+          (tree-sitter-indent--indents-in-path parentwise-path
+                                               original-column)))
+    (seq-reduce #'tree-sitter-indent--updated-column
+                indents-in-path
+                0 ;; start at column 0
+                )))
 
 ;;;; Public API
 
@@ -478,23 +449,12 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
             (skip-chars-forward " \t")
             (point)))
          (should-save-excursion
-          (save-excursion
-            (< first-non-blank-pos original-position)))
-         (current-buffer-indent-offset
-          (thread-last major-mode
-            (symbol-name)
-            (replace-regexp-in-string (rx "-mode") "")
-            (format "%s-indent-offset")
-            (intern)
-            (symbol-value)))
+          (< first-non-blank-pos original-position))
          (original-column
-          (-
-           (line-beginning-position)
-           (point)))
+          (abs (- (line-beginning-position)
+                  first-non-blank-pos)))
          (new-column
-          (tree-sitter-indent--indent-column current-buffer-indent-offset
-                                             original-column
-                                             (point))))
+          (tree-sitter-indent--indent-column original-column)))
     (when (numberp new-column)
       (if should-save-excursion
           (save-excursion (indent-line-to new-column))
@@ -512,7 +472,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
          (tree-sitter-tree-before (tsc-tree-to-sexp tree-sitter-tree))
          (column
           (tree-sitter-indent-line)))
-    (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %d) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
+    (message "tree-sitter-indent: Indented ⎡%s⎦ to ⎡%s⎦ (col %s) because of parentwise path of ⎡%s⎦ (while looking at ⎡%s⎦ & when tree is ⎡%s⎦)"
              line-str
              (thing-at-point 'line)
              column
