@@ -345,6 +345,8 @@ is in a middle position.
              `(column-indent ,chain-column))
             ((numberp sibling-column)
              `(column-indent ,sibling-column))
+            ((tree-sitter-indent--node-is-multi-line-text current-node)
+             `(preserve . ,original-column))
             ((and parent-node
                   (tree-sitter-indent--node-is-paren-indent parent-node))
              (let* ((paren-opener
@@ -375,8 +377,6 @@ is in a middle position.
                'indent))
             (current-node-must-outdent
              'outdent)
-            ((tree-sitter-indent--node-is-multi-line-text current-node)
-             `(preserve . ,original-column))
             (t
              'no-indent))))))))
 
@@ -451,8 +451,8 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
          (should-save-excursion
           (< first-non-blank-pos original-position))
          (original-column
-          (- (line-beginning-position)
-             original-position))
+          (abs (- (line-beginning-position)
+                  first-non-blank-pos)))
          (new-column
           (tree-sitter-indent--indent-column original-column)))
     (when (numberp new-column)
