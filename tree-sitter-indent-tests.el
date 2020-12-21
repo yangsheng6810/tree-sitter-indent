@@ -56,8 +56,7 @@
             (funcall tree-sitter-indent-tests--current-major-mode)
 
             ;; setup indent using tree-sitter
-            (tree-sitter-mode)
-            (setq-local indent-line-function #'tree-sitter-indent-line)
+            (tree-sitter-indent-mode)
             (indent-region-line-by-line (point-min) (point-max))
 
             ;; get buffer string

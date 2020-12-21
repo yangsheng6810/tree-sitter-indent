@@ -26,15 +26,12 @@
 ;; Use Tree-sitter as backend to source code indentation.
 ;;
 ;; Provide an `indent-line-function` using the emacs-tree-sitter package
-;; Usage (for julia language):
+;; Usage (for Rust language):
 ;;
 ;; (require 'tree-sitter-indent)
-;; (tree-sitter-require 'julia)
+;; (tree-sitter-require 'rust)
 ;;
-;; (add-hook 'julia-mode-hook
-;;           (lambda ()
-;;             (tree-sitter-mode)
-;;             (setq-local indent-line-function #'tree-sitter-indent-line))
+;; (add-hook 'rust-mode-hook #'tree-sitter-indent-mode)
 ;;
 ;; The code in this package was based on Atom implementation of line indenting using
 ;; Tree-sitter at https://github.com/atom/atom/pull/18321/
@@ -438,9 +435,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
 ;;;###autoload
 (defun tree-sitter-indent-line ()
   "Use Tree-sitter as backend to indent current line."
-  ;;Use in buffer like so:
-
-  ;; (setq-local indent-line-function #'tree-sitter-indent-line).
+  (cl-assert (not (null tree-sitter-indent-current-scopes)))
   (let* ((original-position
           (point))
          (first-non-blank-pos ;; see savep in `smie-indent-line'
@@ -479,6 +474,33 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
              readable-parentwise-path
              (tsc-node-type indenting-node)
              tree-sitter-tree-before)))
+
+(define-minor-mode tree-sitter-indent-mode
+  "Use Tree-sitter as backend for indenting buffer."
+  nil nil nil
+  (cond
+   (tree-sitter-indent-mode
+    (unless tree-sitter-mode
+      ;; ensure that tree-sitter-mode is activated
+      (tree-sitter-mode))
+    (setq-local indent-line-function
+                #'tree-sitter-indent-line)
+    (setq-local tree-sitter-indent-offset
+                (thread-last major-mode
+                  (symbol-name)
+                  (replace-regexp-in-string (rx "-mode") "")
+                  (format "%s-indent-offset")
+                  (intern)
+                  (symbol-value)))
+    (setq-local tree-sitter-indent-current-scopes
+                (thread-last major-mode
+                  (symbol-name)
+                  (replace-regexp-in-string (rx "-mode") "")
+                  (format "tree-sitter-indent-%s-scopes")
+                  (intern)
+                  (symbol-value))))
+   (t
+    (setq-local indent-line-function (default-value 'indent-line-function)))))
 
 (provide 'tree-sitter-indent)
 ;;; tree-sitter-indent.el ends here

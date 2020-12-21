@@ -49,10 +49,7 @@ So far, only rust language can be indented. Add the following to your `init.el`
 (tree-sitter-require 'rust)
 (require 'tree-sitter-indent)
 
-(add-hook 'rust-mode-hook
-          (lambda ()
-            (tree-sitter-mode)
-            (setq-local indent-line-function #'tree-sitter-indent-line))
+(add-hook 'rust-mode-hook #'tree-sitter-indent-mode)
 ```
 
 ## Adding languages or fixing current
