@@ -3,7 +3,9 @@
 EMACS ?= emacs
 BEMACS = $(EMACS) -Q -batch
 
-ELISP_SOURCES=$(wildcard *.el)
+ELISP_SOURCES := $(wildcard *.el)
+ELISP_SOURCES := $(filter-out $(wildcard flycheck_*), $(ELISP_SOURCES))
+
 ELISP_BYTECOMPILED=$(patsubst %.el,%.elc,$(ELISP_SOURCES))
 
 all: bytec lint test
