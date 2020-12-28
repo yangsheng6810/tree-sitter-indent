@@ -104,6 +104,47 @@
   "Scopes for indenting in Julia."
   :type 'sexp)
 
+(defcustom tree-sitter-indent-csharp-scopes
+  '((indent-all . ;; these nodes are always indented
+                (accessor_declaration
+                 break_statement
+                 arrow_expression_clause
+                 parameter_list
+                 conditional_expression
+                 "."))
+    (indent-rest . ;; if parent node is one of these and node is not first → indent
+                 (binary_expression
+                  switch_section))
+    (indent-body . ;; if parent node is one of these and current node is in middle → indent
+                 (block
+                     anonymous_object_creation_expression
+                   enum_member_declaration_list
+                   initializer_expression
+                   expression_statement
+                   declaration_list
+                   attribute_argument_list
+                   switch_body))
+
+    (paren-indent . ;; if parent node is one of these → indent to paren opener
+                  (parenthesized_expression))
+    (align-char-to . ;; chaining char → node types we move parentwise to find the first chaining char
+                   ())
+    (aligned-siblings . ;; siblings (nodes with same parent) should be aligned to the first child
+                      (parameter))
+
+    (multi-line-text . ;; if node is one of these, then don't modify the indent
+                     ;; this is basically a peaceful way out by saying "this looks like something
+                     ;; that cannot be indented using AST, so best I leave it as-is"
+                     (comment
+                      preprocessor_call
+                      labeled_statement))
+    (outdent . ;; these nodes always outdent (1 shift in opposite direction)
+             (;; "}"
+              case_switch_label)))
+  "Scopes for indenting in C#."
+  :type 'sexp)
+
+
 (defvar-local tree-sitter-indent-current-scopes nil
   "Current scopes in use for tree-sitter-indent.")
 

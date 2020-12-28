@@ -437,5 +437,32 @@ Ok(foo.bar()
     :is-tree-sitter-indented)
   )
 
+(describe "C#"
+  (before-all
+    (setq ;;csharp-indent-offset 4
+     tree-sitter-indent-tests--current-major-mode 'csharp-mode))
+  (it "basic indent"
+    ;; https://codeberg.org/FelipeLema/tree-sitter-indent.el/issues/8
+    "
+namespace Foo
+{
+    // point here
+}
+"
+    :is-tree-sitter-indented)
+  (it "issue 8"
+    ;; https://codeberg.org/FelipeLema/tree-sitter-indent.el/issues/8
+    ;; do mind the 4 spaces between { … }
+    "
+namespace Foo
+{
+
+}
+"
+    :is-tree-sitter-indented)
+
+
+  )
+
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here
