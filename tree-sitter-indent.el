@@ -272,14 +272,14 @@ CURRENT-NODE belongs to the aligned-siblings group."
                 (first-sibling
                  (cl-loop for ith-sibling = (tsc-get-nth-child parent-node 0)
                           then (tsc-get-next-sibling ith-sibling)
-                          while (not (null ith-sibling))
+                          while ith-sibling
                           if (equal current-node-type
                                     (tsc-node-type ith-sibling))
                           return ith-sibling
                           end))
                 (first-sibling-position
                  (tsc-node-start-byte first-sibling)))
-      (when (not (tsc-node-eq current-node first-sibling))
+      (unless (tsc-node-eq current-node first-sibling)
         (save-excursion
           (goto-char first-sibling-position)
           (- first-sibling-position
@@ -435,7 +435,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
 ;;;###autoload
 (defun tree-sitter-indent-line ()
   "Use Tree-sitter as backend to indent current line."
-  (cl-assert (not (null tree-sitter-indent-current-scopes)))
+  (cl-assert tree-sitter-indent-current-scopes)
   (let* ((original-position
           (point))
          (first-non-blank-pos ;; see savep in `smie-indent-line'
@@ -463,7 +463,7 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
                           position))
          (parentwise-path (tree-sitter-indent--parentwise-path indenting-node))
          (readable-parentwise-path
-          (seq-map 'tsc-node-type parentwise-path))
+          (seq-map #'tsc-node-type parentwise-path))
          (tree-sitter-tree-before (tsc-tree-to-sexp tree-sitter-tree))
          (column
           (tree-sitter-indent-line)))
