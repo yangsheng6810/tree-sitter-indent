@@ -42,6 +42,7 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'seq)
+(require 'subr-x)
 (require 'tree-sitter)
 
 (defgroup tree-sitter-indent nil "Indent lines using Tree-sitter as backend"
