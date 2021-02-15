@@ -6,7 +6,7 @@
 ;; Keywords: convenience, internal
 ;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1") (seq "2.20"))
 ;; URL: https://codeberg.org/FelipeLema/tree-sitter-indent.el
-;; Version: 0.2
+;; Version: 0.3
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
