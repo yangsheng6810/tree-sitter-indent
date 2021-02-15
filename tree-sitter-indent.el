@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Lema <felipelema@mortemale.org>
 ;; Keywords: convenience, internal
-;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1") (seq "2.21"))
+;; Package-Requires: ((emacs "26.1") (tree-sitter "0.12.1") (seq "2.20"))
 ;; URL: https://codeberg.org/FelipeLema/tree-sitter-indent.el
 ;; Version: 0.2
 
