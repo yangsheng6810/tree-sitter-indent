@@ -308,8 +308,9 @@ align."
                                ancestors-path)))
         (when align-to-node
           (save-excursion
-            (goto-char (point-min))
-            (forward-line (- (car (tsc-node-start-point align-to-node)) 1))
+            ;; Go to the ancestor node to which we are aligning
+            ;; and returns its line's first non-whitespace character's column
+            (goto-char (tsc-node-start-byte align-to-node))
             (back-to-indentation)
             (current-column)))))))
 
