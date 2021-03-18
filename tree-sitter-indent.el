@@ -298,21 +298,22 @@ If a node is found move to node line and return the line column indentation.
 ALIGN-TO-NODE-LINE-ALIST is used to test whether CURRENT-NODE belongs
 to the align-to-node-line group and to get node types that it should
 align."
-  (let ((scope (alist-get (tsc-node-type current-node) align-to-node-line-alist)))
-    (when scope
-      (let* ((reverse-path (reverse parentwise-path))
-              (ancestors-path (nthcdr (+ 1 (cl-position current-node reverse-path)) reverse-path))
-              (align-to-node (cl-find-if
-                               (lambda (ancestor-node)
-                                 (member (tsc-node-type ancestor-node) scope))
-                               ancestors-path)))
-        (when align-to-node
-          (save-excursion
-            ;; Go to the ancestor node to which we are aligning
-            ;; and returns its line's first non-whitespace character's column
-            (goto-char (tsc-node-start-byte align-to-node))
-            (back-to-indentation)
-            (current-column)))))))
+  (when-let ((scope (alist-get (tsc-node-type current-node) align-to-node-line-alist)))
+    (let* ((reverse-path (reverse parentwise-path))
+           (ancestors-path (nthcdr
+                             (+ 1 (cl-position current-node reverse-path))
+                             reverse-path))
+           (align-to-node (cl-find-if
+                            (lambda (ancestor-node)
+                              (member (tsc-node-type ancestor-node) scope))
+                            ancestors-path)))
+      (when align-to-node
+        (save-excursion
+          ;; Go to the ancestor node to which we are aligning
+          ;; and returns its line's first non-whitespace character's column
+          (goto-char (tsc-node-start-byte align-to-node))
+          (back-to-indentation)
+          (current-column))))))
 
 (cl-defun tree-sitter-indent--indents-in-path (parentwise-path original-column)
   "Map PARENTWISE-PATH into indent instructions.
