@@ -364,7 +364,14 @@ is in a middle position.
                 (sibling-column
                  (tree-sitter-indent--first-sibling-column
                   current-node
-                  parent-node)))
+                  parent-node))
+                (node-line-column
+                 (tree-sitter-indent--align-node-line-column
+                  current-node
+                  (alist-get
+                   'align-to-node-line
+                   tree-sitter-indent-current-scopes)
+                  parentwise-path)))
            (cond
             ((numberp chain-column)
              `(column-indent ,chain-column))
@@ -372,6 +379,8 @@ is in a middle position.
              `(column-indent ,sibling-column))
             ((tree-sitter-indent--node-is-multi-line-text current-node)
              `(preserve . ,original-column))
+            ((numberp node-line-column)
+             `(column-indent ,node-line-column))
             ((and parent-node
                   (tree-sitter-indent--node-is-paren-indent parent-node))
              (let* ((paren-opener
