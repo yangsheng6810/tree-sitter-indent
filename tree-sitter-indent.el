@@ -286,6 +286,33 @@ CURRENT-NODE belongs to the aligned-siblings group."
           (- first-sibling-position
              (line-beginning-position)))))))
 
+(defun tree-sitter-indent--align-node-line-column
+  (current-node align-to-node-line-alist parentwise-path)
+  "Column position of line of CURRENT-NODE's closest configured ancestor.
+
+Get list of node types with CURRENT-NODE type as key in
+align-to-node-line group, then search PARENTWISE-PATH in reverse for
+the first ancestor that has a type that matches a type in the list.
+If a node is found move to node line and return the line column indentation.
+
+ALIGN-TO-NODE-LINE-ALIST is used to test whether CURRENT-NODE belongs
+to the align-to-node-line group and to get node types that it should
+align."
+  (let ((scope (alist-get (tsc-node-type current-node) align-to-node-line-alist)))
+    (when scope
+      (let* ((reverse-path (reverse parentwise-path))
+              (ancestors-path (nthcdr (+ 1 (cl-position current-node reverse-path)) reverse-path))
+              (align-to-node (cl-find-if
+                               (lambda (ancestor-node)
+                                 (member (tsc-node-type ancestor-node) scope))
+                               ancestors-path)))
+        (when align-to-node
+          (save-excursion
+            (goto-char (point-min))
+            (forward-line (- (car (tsc-node-start-point align-to-node)) 1))
+            (back-to-indentation)
+            (current-column)))))))
+
 (cl-defun tree-sitter-indent--indents-in-path (parentwise-path original-column)
   "Map PARENTWISE-PATH into indent instructions.
 
