@@ -26,3 +26,4 @@
 ;; lang-specific packages
 (straight-use-package 'julia-mode)
 (straight-use-package 'rust-mode)
+(straight-use-package '(csharp-mode :fork "joefbsjr/csharp-mode"))
