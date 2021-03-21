@@ -305,7 +305,13 @@ align."
                              reverse-path))
            (align-to-node (cl-find-if
                             (lambda (ancestor-node)
-                              (member (tsc-node-type ancestor-node) scope))
+                              (and
+                                (member (tsc-node-type ancestor-node) scope)
+                                (not (cl-find-if
+                                       (lambda (other-ancestor)
+                                         (> (car (tsc-node-start-point other-ancestor))
+                                           (car (tsc-node-start-point ancestor-node))))
+                                       ancestors-path))))
                             ancestors-path)))
       (when align-to-node
         (save-excursion

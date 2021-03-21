@@ -460,6 +460,17 @@ SomeOtherFunction(param1, param2,
             .Cons
             .WriteLine(\"OtherBoo\");
     });
+" :is-tree-sitter-indented))
+  (it "Multiline lambda with internal block"
+    (expect
+     "
+SomeFunction(() =>
+{
+    if (true)
+    {
+        return false;
+    }
+});
 " :is-tree-sitter-indented)))
 
 
