@@ -26,6 +26,7 @@
 (require 'buttercup)
 (require 'julia-mode)
 (require 'rust-mode)
+(require 'csharp-tree-sitter)
 (require 'dash)
 (require 's)
 (require 'tree-sitter-indent)
@@ -436,6 +437,42 @@ Ok(foo.bar()
 "
     :is-tree-sitter-indented)
   )
+
+(tree-sitter-require 'c-sharp)
+(describe "Csharp"
+  (before-all
+    (setq csharp-tree-sitter-indent-offset 4
+          tree-sitter-indent-tests--current-major-mode 'csharp-tree-sitter-mode))
+  (it "PR 12. Multi-line lambda in function call."
+	;; https://codeberg.org/FelipeLema/tree-sitter-indent.el/pulls/12
+    (expect
+     "
+SomeFunction(() =>
+{
+    System
+        .Cons
+        .WriteLine(\"boo\");
+});
+SomeOtherFunction(param1, param2,
+    () =>
+    {
+        System
+            .Cons
+            .WriteLine(\"OtherBoo\");
+    });
+" :is-tree-sitter-indented))
+  (it "Multiline lambda with internal block"
+    (expect
+     "
+SomeFunction(() =>
+{
+    if (true)
+    {
+        return false;
+    }
+});
+" :is-tree-sitter-indented)))
+
 
 (provide 'tree-sitter-indent-tests)
 ;;; tree-sitter-indent-tests.el ends here
