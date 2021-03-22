@@ -26,7 +26,7 @@
 (require 'buttercup)
 (require 'julia-mode)
 (require 'rust-mode)
-(require 'csharp-mode)
+(require 'csharp-tree-sitter)
 (require 'dash)
 (require 's)
 (require 'tree-sitter-indent)
