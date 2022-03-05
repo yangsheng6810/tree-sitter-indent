@@ -102,7 +102,7 @@
                      ())
     (outdent . ;; these nodes always outdent (1 shift in opposite direction)
              ("}")))
-  "Scopes for indenting in Julia."
+  "Scopes for indenting in Rust."
   :type 'sexp)
 
 (defvar-local tree-sitter-indent-current-scopes nil
