@@ -110,20 +110,21 @@
 (defcustom tree-sitter-indent-kotlin-scopes
   '((indent-all . ;; these nodes are always indented
                 (class_body
+                 enum_class_body
                  binary_expression
-                 class_body
-                 function_body))
+                 function_body
+		 annotated_lambda))
     (indent-rest . ;; if parent node is one of this and node is not first → indent
                  (assignment_expression
-                  export_statement
+                  export_statement		  
                   import_statement))
     (indent-body . ;; if parent node is one of this and current node is in middle → indent
-                 (compound_expression ;; begin … end
+                 (compound_expression
+                  class_declaration
                   do_clause
                   for_statement
                   if_statement
                   while_statement))
-
     (paren-indent . ;; if parent node is one of these → indent to paren opener
                   (argument_list ;; arguments of a function call
                    ))
