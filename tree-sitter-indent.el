@@ -105,8 +105,6 @@
   "Scopes for indenting in Rust."
   :type 'sexp)
 
-(setf kotlin-indent-offset 4)
-
 (defcustom tree-sitter-indent-kotlin-scopes
   '((indent-all . ;; these nodes are always indented
                 (class_body
@@ -116,7 +114,7 @@
 		 annotated_lambda))
     (indent-rest . ;; if parent node is one of this and node is not first → indent
                  (assignment_expression
-                  export_statement		  
+                  export_statement
                   import_statement))
     (indent-body . ;; if parent node is one of this and current node is in middle → indent
                  (compound_expression
@@ -553,6 +551,8 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
              (tsc-node-type indenting-node)
              tree-sitter-tree-before)))
 
+(defvar-local tree-sitter-indent-use-mode nil)
+
 ;;;###autoload
 (define-minor-mode tree-sitter-indent-mode
   "Use Tree-sitter as backend for indenting buffer."
@@ -565,14 +565,14 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
     (setq-local indent-line-function
                 #'tree-sitter-indent-line)
     (setq-local tree-sitter-indent-offset
-                (thread-last major-mode
+                (thread-last (or tree-sitter-indent-use-mode major-mode)
                   (symbol-name)
                   (replace-regexp-in-string (rx "-mode") "")
                   (format "%s-indent-offset")
                   (intern)
                   (symbol-value)))
     (setq-local tree-sitter-indent-current-scopes
-                (thread-last major-mode
+                (thread-last (or tree-sitter-indent-use-mode major-mode)
                   (symbol-name)
                   (replace-regexp-in-string (rx "-mode") "")
                   (format "tree-sitter-indent-%s-scopes")
