@@ -105,6 +105,38 @@
   "Scopes for indenting in Rust."
   :type 'sexp)
 
+(setf kotlin-indent-offset 4)
+
+(defcustom tree-sitter-indent-kotlin-scopes
+  '((indent-all . ;; these nodes are always indented
+                (class_body
+                 binary_expression
+                 class_body
+                 function_body))
+    (indent-rest . ;; if parent node is one of this and node is not first → indent
+                 (assignment_expression
+                  export_statement
+                  import_statement))
+    (indent-body . ;; if parent node is one of this and current node is in middle → indent
+                 (compound_expression ;; begin … end
+                  do_clause
+                  for_statement
+                  if_statement
+                  while_statement))
+
+    (paren-indent . ;; if parent node is one of these → indent to paren opener
+                  (argument_list ;; arguments of a function call
+                   ))
+    (multi-line-text . ;; if node is one of this, then don't modify the indent
+                     ;; this is basically a peaceful way out by saying "this looks like something
+                     ;; that cannot be indented using AST, so best I leave it as-is"
+                     (triple_string))
+    (outdent . ;; these nodes always outdent (1 shift in opposite direction)
+             (else_clause
+              "}")))
+  "Scopes for indenting in Kotlin."
+  :type 'sexp)
+
 (defvar-local tree-sitter-indent-current-scopes nil
   "Current scopes in use for tree-sitter-indent.")
 
