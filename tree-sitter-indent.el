@@ -520,6 +520,8 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
              (tsc-node-type indenting-node)
              tree-sitter-tree-before)))
 
+(defvar-local tree-sitter-indent-use-mode nil)
+
 ;;;###autoload
 (define-minor-mode tree-sitter-indent-mode
   "Use Tree-sitter as backend for indenting buffer."
@@ -532,14 +534,14 @@ See `tree-sitter-indent-line'.  ORIGINAL-COLUMN is forwarded to
     (setq-local indent-line-function
                 #'tree-sitter-indent-line)
     (setq-local tree-sitter-indent-offset
-                (thread-last major-mode
+                (thread-last (or tree-sitter-indent-use-mode major-mode)
                   (symbol-name)
                   (replace-regexp-in-string (rx "-mode") "")
                   (format "%s-indent-offset")
                   (intern)
                   (symbol-value)))
     (setq-local tree-sitter-indent-current-scopes
-                (thread-last major-mode
+                (thread-last (or tree-sitter-indent-use-mode major-mode)
                   (symbol-name)
                   (replace-regexp-in-string (rx "-mode") "")
                   (format "tree-sitter-indent-%s-scopes")
